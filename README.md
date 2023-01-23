@@ -4,7 +4,7 @@
 
 	Version 1.0
 
-	Aqwam's Roblox Matrix Library (AR-MatrixL)
+	Aqwam's Roblox Machine Learning Library (AR-MachineLL)
 
 	Author: Aqwam Harish Aiman
 	
