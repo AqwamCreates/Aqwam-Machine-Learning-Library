@@ -1,0 +1,135 @@
+local module = {}
+
+local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
+
+
+local defaultMaxNumberOfIterations = 500
+
+local defaultLearningRate = 0.1
+
+local defaultSigmoidFunction = "sigmoid"
+
+local defaultTargetCost = math.huge
+
+
+local sigmoidFunctionList = {
+
+	["sigmoid"] = function (z) return 1/(1+math.exp(-1 * z)) end,
+
+}
+
+
+local function calculateHypothesisVector(featureMatrix, modelParameters)
+	
+	return AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
+	
+end
+
+local function calculateCost(modelParameters, featureMatrix, labelVector, sigmoidFunction)
+	
+	local numberOfData = #featureMatrix
+	
+	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters)
+	
+	local calculatedError = AqwamMatrixLibrary:subtract(labelVector, hypothesisVector)
+	
+	local totalCost = 0
+	
+	local averageCost
+	
+	local currentYValue
+	
+	local currentHypothesisValue
+	
+	for index = 1, numberOfData, 1 do
+		
+		currentYValue = labelVector[index][1]
+		
+		currentHypothesisValue = hypothesisVector[index][1]
+		
+		totalCost += -(currentYValue * math.log10(currentHypothesisValue) + (1 - currentYValue) * math.log10(1 - currentHypothesisValue))
+		
+	end
+	
+	averageCost = totalCost / numberOfData
+	
+	return averageCost
+	
+end
+
+local function gradientDescent(modelParameters, featureMatrix, labelVector, sigmoidFunction, learningRate)
+	
+	local numberOfData = #featureMatrix
+
+	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters)
+
+	local calculatedError = AqwamMatrixLibrary:subtract(hypothesisVector, labelVector)
+	
+	local calculatedErrorWithFeatureMatrix = AqwamMatrixLibrary:dotProduct(AqwamMatrixLibrary:transpose(featureMatrix), calculatedError)
+
+	local costFunctionDerivative = AqwamMatrixLibrary:multiply(learningRate, (1/numberOfData) ,  calculatedErrorWithFeatureMatrix)
+	
+	return costFunctionDerivative
+	
+end
+
+
+function module:train(featureMatrix, labelVector, maxNumberOfIterations, learningRate, sigmoidFunction, targetCost, supressOutput)
+	
+	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
+
+	learningRate = learningRate or defaultLearningRate
+	
+	sigmoidFunction = sigmoidFunction or defaultSigmoidFunction
+	
+	targetCost = targetCost or defaultTargetCost
+	
+	local modelParameters = AqwamMatrixLibrary:createRandomNormalMatrix(#featureMatrix[1], 1)
+	
+	local numberOfIterations = 0
+	
+	local cost
+	
+	repeat
+		
+		numberOfIterations += 1
+		
+		modelParameters = gradientDescent(modelParameters, featureMatrix, labelVector, sigmoidFunction, learningRate)
+		
+		cost = calculateCost(modelParameters, featureMatrix, labelVector, sigmoidFunction)
+		
+		if (not supressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
+		
+	until (numberOfIterations == maxNumberOfIterations) or (math.abs(cost) <= targetCost)
+	
+	if (cost == math.huge) then
+
+		warn("The model diverged! Please repeat the experiment again or change the argument values.")
+
+	end
+	
+	return modelParameters, cost
+	
+end
+
+function module:predict(featureMatrix, modelParameters, sigmoidFunction)
+	
+	sigmoidFunction = sigmoidFunction or defaultSigmoidFunction
+	
+	local z = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
+	
+	local hypothesis = sigmoidFunctionList[sigmoidFunction](z)
+	
+	if (hypothesis >= 0.5) then
+		
+		return 1
+		
+	else
+		
+		return 0
+		
+	end 
+
+end
+
+return module
