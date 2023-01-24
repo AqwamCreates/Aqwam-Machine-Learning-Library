@@ -19,9 +19,23 @@ local sigmoidFunctionList = {
 }
 
 
-local function calculateHypothesisVector(featureMatrix, modelParameters)
+local function calculateHypothesisVector(featureMatrix, modelParameters, sigmoidFunction)
 	
-	return AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
+	local numberOfData = #featureMatrix
+	
+	local result = {}
+	
+	local zVector = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters) 
+	
+	for index = 1, numberOfData, 1 do
+		
+		result[index] = {}
+		
+		result[index][1] = sigmoidFunctionList[sigmoidFunction] (zVector[index][1])
+		
+	end
+	
+	return result
 	
 end
 
@@ -29,7 +43,7 @@ local function calculateCost(modelParameters, featureMatrix, labelVector, sigmoi
 	
 	local numberOfData = #featureMatrix
 	
-	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters)
+	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters, sigmoidFunction)
 	
 	local calculatedError = AqwamMatrixLibrary:subtract(labelVector, hypothesisVector)
 	
@@ -61,7 +75,7 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, sigm
 	
 	local numberOfData = #featureMatrix
 
-	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters)
+	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters, sigmoidFunction)
 
 	local calculatedError = AqwamMatrixLibrary:subtract(hypothesisVector, labelVector)
 	
