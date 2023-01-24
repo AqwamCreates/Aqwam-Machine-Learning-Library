@@ -2,7 +2,6 @@ local module = {}
 
 local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
 
-
 local defaultMaxNumberOfIterations = 500
 
 local defaultLearningRate = 0.1
@@ -89,6 +88,8 @@ end
 
 
 function module:train(featureMatrix, labelVector, maxNumberOfIterations, learningRate, sigmoidFunction, targetCost, supressOutput)
+	
+	if (#featureMatrix ~= #labelVector) then error("The feature matrix and the label vector does not contain the same number of rows!") end
 	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 
