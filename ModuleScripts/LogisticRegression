@@ -9,7 +9,7 @@ local defaultLearningRate = 0.1
 
 local defaultSigmoidFunction = "sigmoid"
 
-local defaultTargetCost = math.huge
+local defaultTargetCost = 0
 
 
 local sigmoidFunctionList = {
