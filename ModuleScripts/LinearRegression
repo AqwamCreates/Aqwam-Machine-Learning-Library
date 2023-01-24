@@ -66,6 +66,8 @@ end
 
 function module:train(featureMatrix, labelVector, maxNumberOfIterations, learningRate, lossFunction, targetCost, supressOutput)
 	
+	if (#featureMatrix ~= #labelVector) then error("The feature matrix and the label vector does not contain the same number of rows!") end
+	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 	
 	learningRate = learningRate or defaultLearningRate
