@@ -26,3 +26,7 @@
 		- USED AS COMMERCIAL USE 
 	
 	--------------------------------------------------------------------
+	
+	Documentation can be found here
+	
+	https://robloxmachinell.substack.com/p/directory
