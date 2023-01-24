@@ -8,7 +8,7 @@ local defaultLearningRate = 0.3
 
 local defaultLossFunction = "L1"
 
-local defaultTargetCost = math.huge
+local defaultTargetCost = 0
 
 
 local lossFunctionList = {
