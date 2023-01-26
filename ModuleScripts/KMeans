@@ -14,7 +14,7 @@ local defaultStopWhenModelParametersDoesNotChange = false
 
 local defaultSetInitialClustersOnDataPoints = true
 
-local defaultSetTheCentroidDistanceFarthest = false
+local defaultSetTheCentroidsDistanceFarthest = false
 
 local distanceFunctionList = {
 
@@ -267,7 +267,7 @@ local function calculateModelParametersMean(modelParameters, featureMatrix, dist
 	
 end
 
-function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, distanceFunction, targetCost, setInitialClustersOnDataPoints, setTheCentroidDistanceFarthest, stopWhenModelParametersDoesNotChange, suppressOutput)
+function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, distanceFunction, targetCost, setInitialClustersOnDataPoints, setTheCentroidsDistanceFarthest, stopWhenModelParametersDoesNotChange, suppressOutput)
 	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 	
@@ -281,7 +281,7 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 	
 	setInitialClustersOnDataPoints = setInitialClustersOnDataPoints or defaultSetInitialClustersOnDataPoints
 	
-	setTheCentroidDistanceFarthest = setTheCentroidDistanceFarthest or defaultSetTheCentroidDistanceFarthest
+	setTheCentroidsDistanceFarthest = setTheCentroidsDistanceFarthest or defaultSetTheCentroidDistanceFarthest
 	
 	local modelParameters
 	
@@ -291,11 +291,11 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 	
 	local cost
 	
-	if setInitialClustersOnDataPoints and setTheCentroidDistanceFarthest then
+	if setInitialClustersOnDataPoints and setTheCentroidsDistanceFarthest then
 		
 		modelParameters = chooseFarthestCentroids(featureMatrix, numberOfClusters, distanceFunction)
 		
-	elseif setInitialClustersOnDataPoints and not setTheCentroidDistanceFarthest then
+	elseif setInitialClustersOnDataPoints and not setTheCentroidsDistanceFarthest then
 		
 		modelParameters = chooseRandomCentroids(featureMatrix, numberOfClusters)
 		
