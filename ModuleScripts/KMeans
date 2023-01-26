@@ -323,6 +323,12 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 
 	until (numberOfIterations == maxNumberOfIterations) or (math.abs(cost) <= targetCost) or (areModelParametersEqual and stopWhenModelParametersDoesNotChange)
 	
+	if (cost == math.huge) then
+
+		warn("The model diverged! Please repeat the experiment again or change the argument values.")
+
+	end
+	
 	return modelParameters, cost
 	
 end
