@@ -259,6 +259,8 @@ local function calculateModelParametersMean(modelParameters, featureMatrix, dist
 	
 	for cluster = 1, #modelParameters, 1 do
 		
+		sumOfAssignedCentroidVector[1][cluster] = math.max(1, sumOfAssignedCentroidVector[1][cluster])
+		
 		modelParameters[cluster] = AqwamMatrixLibrary:divide({modelParameters[cluster]}, sumOfAssignedCentroidVector[1][cluster])[1]
 		
 	end
