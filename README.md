@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------
 
-Version 1.0
+Version 1.1
 
 Aqwam's Roblox Machine Learning Library (AR-MachineLL)
 
