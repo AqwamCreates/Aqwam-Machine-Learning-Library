@@ -55,7 +55,7 @@ local function assignToCluster(distanceFromClusterRowVector) -- Number of column
 	
 	local clusterNumber
 	
-	for cluster = 1, #distanceFromClusterRowVector + 1, 1 do
+	for cluster = 1, #distanceFromClusterRowVector[1], 1 do
 		
 		distanceFromCluster = distanceFromClusterRowVector[1][cluster]
 		
