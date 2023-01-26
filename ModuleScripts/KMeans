@@ -281,7 +281,7 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 	
 	setInitialClustersOnDataPoints = setInitialClustersOnDataPoints or defaultSetInitialClustersOnDataPoints
 	
-	setTheCentroidsDistanceFarthest = setTheCentroidsDistanceFarthest or defaultSetTheCentroidDistanceFarthest
+	setTheCentroidsDistanceFarthest = setTheCentroidsDistanceFarthest or defaultSetTheCentroidsDistanceFarthest
 	
 	local modelParameters
 	
