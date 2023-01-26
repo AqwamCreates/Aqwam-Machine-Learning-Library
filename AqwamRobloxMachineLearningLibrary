@@ -2,7 +2,7 @@
 
 	--------------------------------------------------------------------
 
-	Version 1.0
+	Version 1.1
 
 	Aqwam's Roblox Machine Learning Library (AR-MachineLL)
 
@@ -31,6 +31,7 @@
 
 local LinearRegression = require(script.LinearRegression)
 local LogisticRegression = require(script.LogisticRegression)
+local KMeans = require(script.KMeans)
 
 local LinearRegressionDictionary = {
 	
@@ -46,9 +47,19 @@ local LogisticRegressionDictionary = {
 
 }
 
+local KMeansDictionary = {
+	
+	train = KMeans.train,
+	predict = KMeans.predict
+	
+}
+
 local AqwamRobloxMachineLearningLibrary = {}
 
 AqwamRobloxMachineLearningLibrary.LinearRegression = LinearRegressionDictionary
+
 AqwamRobloxMachineLearningLibrary.LogisticRegression = LogisticRegressionDictionary
+
+AqwamRobloxMachineLearningLibrary.KMeans = KMeansDictionary
 
 return AqwamRobloxMachineLearningLibrary
