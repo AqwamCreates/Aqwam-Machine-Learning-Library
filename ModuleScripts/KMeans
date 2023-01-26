@@ -1,1 +1,284 @@
+local module = {}
 
+local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
+
+local defaultMaxNumberOfIterations = 500
+
+local defaultTargetCost = 0
+
+local defaultNumberOfClusters = 2
+
+local defaultDistanceFunction = "euclidean"
+
+local defaultStopWhenModelParametersDoesNotChange = false
+
+local defaultSetInitialClustersOnDataPoints = true
+
+local distanceFunctionList = {
+
+	["manhattan"] = function (y, h) return math.abs(y - h) end,
+
+	["euclidean"] = function (y, h) return (y - h)^2 end,
+
+}
+
+local function chooseRandomClusters(featureMatrix, numberOfClusters)
+	
+	local modelParameters = {}
+	
+	local numberOfRows = #featureMatrix
+	
+	local randomRow
+	
+	local selectedRows = {}
+	
+	local hasANewRandomRowChosen
+	
+	for cluster = 1, numberOfClusters, 1 do
+		
+		repeat
+			
+			randomRow = Random.new():NextInteger(1, numberOfRows)
+			
+			hasANewRandomRowChosen = not (table.find(selectedRows, randomRow))
+			
+			if hasANewRandomRowChosen then
+				
+				table.insert(selectedRows, randomRow)
+				modelParameters[cluster] = featureMatrix[randomRow]
+				
+			end
+			
+		until hasANewRandomRowChosen
+		
+	end
+	
+	return modelParameters
+	
+end
+
+local function calculateDistance(vector1, vector2, distanceFunction)
+	
+	local distance = 0
+	
+	vector1 = AqwamMatrixLibrary:transpose(vector1)
+	vector2 = AqwamMatrixLibrary:transpose(vector2)
+	
+	for row = 1, #vector1, 1 do
+		
+		distance += distanceFunctionList[distanceFunction](vector1[row][1], vector2[row][1])
+		
+	end
+	
+	if (distanceFunction == "euclidean") then
+		
+		distance = math.sqrt(distance)
+		
+	end
+	
+	return distance 
+	
+end
+
+local function assignToCluster(distanceFromClusterRowVector) -- Number of columns -> number of clusters
+	
+	local distanceFromCluster
+	
+	local shortestDistance = math.huge
+	
+	local clusterNumber
+	
+	for cluster = 1, #distanceFromClusterRowVector + 1, 1 do
+		
+		distanceFromCluster = distanceFromClusterRowVector[1][cluster]
+		
+		if (distanceFromCluster < shortestDistance) then
+			
+			shortestDistance = distanceFromCluster
+			
+			clusterNumber = cluster
+			
+		end
+		
+	end
+	
+	return clusterNumber
+	
+end
+
+local function checkIfTheDataPointClusterNumberBelongsToTheCluster(dataPointClusterNumber, cluster)
+	
+	if (dataPointClusterNumber == cluster) then
+		
+		return 1
+		
+	else
+		
+		return 0
+		
+	end
+	
+end
+
+local function createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
+
+	local numberOfData = #featureMatrix
+
+	local numberOfClusters = #modelParameters
+
+	local distanceMatrix = AqwamMatrixLibrary:createMatrix(numberOfData, numberOfClusters)
+
+	for datasetIndex = 1, #featureMatrix, 1 do
+
+		for cluster = 1, #modelParameters, 1 do
+
+			distanceMatrix[datasetIndex][cluster] = calculateDistance({featureMatrix[datasetIndex]}, {modelParameters[cluster]} , distanceFunction)
+
+		end
+
+	end
+
+	return distanceMatrix
+
+end
+
+
+
+local function createClusterAssignmentMatrix(distanceMatrix) -- contains values of 0 and 1, where 0 is "does not belong to this cluster"
+	
+	local numberOfData = #distanceMatrix -- Number of rows
+	
+	local numberOfClusters = #distanceMatrix[1]
+	
+	local clusterAssignmentMatrix = AqwamMatrixLibrary:createMatrix(#distanceMatrix, #distanceMatrix[1])
+	
+	local dataPointClusterNumber
+	
+	for dataIndex = 1, numberOfData, 1 do
+		
+		dataPointClusterNumber = assignToCluster({distanceMatrix[dataIndex]})
+		
+		for cluster = 1, numberOfClusters, 1 do
+
+			clusterAssignmentMatrix[dataIndex][cluster] = checkIfTheDataPointClusterNumberBelongsToTheCluster(dataPointClusterNumber, cluster)
+
+		end
+		
+	end
+	
+	return clusterAssignmentMatrix
+	
+end
+
+local function calculateCost(modelParameters, featureMatrix, distanceFunction)
+	
+	local distanceMatrix = createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
+	
+	local clusterAssignmentMatrix = createClusterAssignmentMatrix(distanceMatrix)
+	
+	local costMatrixSquareRoot = AqwamMatrixLibrary:multiply(distanceMatrix, clusterAssignmentMatrix)
+	
+	local costMatrix = AqwamMatrixLibrary:multiply(costMatrixSquareRoot, costMatrixSquareRoot)
+	
+	local cost = AqwamMatrixLibrary:sum(costMatrix)
+	
+	return cost
+	
+end
+
+local function calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction)
+	
+	local distanceMatrix = createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
+
+	local clusterAssignmentMatrix = createClusterAssignmentMatrix(distanceMatrix) 
+	
+	local sumOfAssignedCentroidVector = AqwamMatrixLibrary:verticalSum(clusterAssignmentMatrix) -- since row is the number of data in clusterAssignmentMatrix, then we vertical sum it
+	
+	for cluster = 1, #modelParameters, 1 do
+		
+		modelParameters[cluster] = AqwamMatrixLibrary:divide({modelParameters[cluster]}, sumOfAssignedCentroidVector[1][cluster])[1]
+		
+	end
+	
+	return modelParameters
+	
+end
+
+function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, distanceFunction, targetCost, setInitialClustersOnDataPoints, stopWhenModelParametersDoesNotChange, suppressOutput)
+	
+	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
+	
+	targetCost = targetCost or defaultTargetCost
+	
+	distanceFunction = distanceFunction or defaultDistanceFunction
+	
+	numberOfClusters = numberOfClusters or defaultNumberOfClusters
+	
+	stopWhenModelParametersDoesNotChange = stopWhenModelParametersDoesNotChange or defaultStopWhenModelParametersDoesNotChange
+	
+	setInitialClustersOnDataPoints = setInitialClustersOnDataPoints or defaultSetInitialClustersOnDataPoints
+	
+	local modelParameters
+	
+	local previousModelParameters
+	
+	local areModelParametersEqual
+	
+	local cost
+	
+	if setInitialClustersOnDataPoints then
+		
+		modelParameters = chooseRandomClusters(featureMatrix, numberOfClusters)
+		
+	else
+		
+		modelParameters = AqwamMatrixLibrary:createRandomMatrix(numberOfClusters, #featureMatrix[1])
+		
+	end
+	
+	local numberOfIterations = 0
+	
+	repeat
+
+		numberOfIterations += 1
+		
+		cost = calculateCost(modelParameters, featureMatrix, distanceFunction)
+
+		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
+		
+		previousModelParameters = modelParameters
+		
+		modelParameters = calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction)
+		
+		areModelParametersEqual =  AqwamMatrixLibrary:areMatricesEqual(modelParameters, previousModelParameters)
+
+	until (numberOfIterations == maxNumberOfIterations) or (math.abs(cost) <= targetCost) or (areModelParametersEqual and stopWhenModelParametersDoesNotChange)
+	
+	return modelParameters, cost
+	
+end
+
+function module:predict(featureMatrix, modelParameters)
+	
+	local resultVectors = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
+	
+	local shortestDistance = math.huge
+	
+	local clusterNumber
+	
+	for index = 1, #resultVectors, 1 do
+		
+		if (resultVectors[index] < shortestDistance) then
+			
+			shortestDistance = resultVectors[index]
+			clusterNumber = index
+			
+		end
+		
+	end
+	
+	return clusterNumber, shortestDistance
+	
+end
+
+return module
