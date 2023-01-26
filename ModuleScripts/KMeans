@@ -14,6 +14,8 @@ local defaultStopWhenModelParametersDoesNotChange = false
 
 local defaultSetInitialClustersOnDataPoints = true
 
+local defaultSetTheCentroidDistanceFarthest = false
+
 local distanceFunctionList = {
 
 	["manhattan"] = function (y, h) return math.abs(y - h) end,
@@ -21,41 +23,6 @@ local distanceFunctionList = {
 	["euclidean"] = function (y, h) return (y - h)^2 end,
 
 }
-
-local function chooseRandomClusters(featureMatrix, numberOfClusters)
-	
-	local modelParameters = {}
-	
-	local numberOfRows = #featureMatrix
-	
-	local randomRow
-	
-	local selectedRows = {}
-	
-	local hasANewRandomRowChosen
-	
-	for cluster = 1, numberOfClusters, 1 do
-		
-		repeat
-			
-			randomRow = Random.new():NextInteger(1, numberOfRows)
-			
-			hasANewRandomRowChosen = not (table.find(selectedRows, randomRow))
-			
-			if hasANewRandomRowChosen then
-				
-				table.insert(selectedRows, randomRow)
-				modelParameters[cluster] = featureMatrix[randomRow]
-				
-			end
-			
-		until hasANewRandomRowChosen
-		
-	end
-	
-	return modelParameters
-	
-end
 
 local function calculateDistance(vector1, vector2, distanceFunction)
 	
@@ -142,7 +109,103 @@ local function createDistanceMatrix(modelParameters, featureMatrix, distanceFunc
 
 end
 
+local function chooseFarthestCentroidFromDatasetDistanceMatrix(distanceMatrix, blacklistedDataIndexArray)
+	
+	local distance
 
+	local maxDistance = 0
+	
+	local dataIndex
+	
+	for row = 1, #distanceMatrix, 1 do
+		
+		if table.find(blacklistedDataIndexArray, row) then continue end
+
+		for column = 1, #distanceMatrix[1], 1 do
+			
+			if table.find(blacklistedDataIndexArray, column) then continue end
+
+			distance = distanceMatrix[row][column]
+			
+			if (distance > maxDistance) then
+				
+				distance = maxDistance
+				dataIndex = row
+				
+			end
+
+		end
+
+	end
+	
+	return dataIndex
+	
+end
+
+local function chooseFarthestCentroids(featureMatrix, numberOfClusters, distanceFunction)
+	
+	local modelParameters = {}
+	
+	local dataIndexArray = {}
+	
+	local dataIndex
+	
+	local distanceMatrix = createDistanceMatrix(featureMatrix, featureMatrix, distanceFunction)
+	
+	repeat
+		
+		dataIndex = chooseFarthestCentroidFromDatasetDistanceMatrix(distanceMatrix, dataIndexArray)
+		
+		table.insert(dataIndexArray, dataIndex)
+		
+	until (#dataIndexArray == numberOfClusters)
+	
+	for row = 1, numberOfClusters, 1 do
+		
+		dataIndex = dataIndexArray[row]
+		
+		table.insert(modelParameters, featureMatrix[dataIndex])
+		
+	end
+	
+	return modelParameters
+	
+end
+
+local function chooseRandomCentroids(featureMatrix, numberOfClusters)
+
+	local modelParameters = {}
+
+	local numberOfRows = #featureMatrix
+
+	local randomRow
+
+	local selectedRows = {}
+
+	local hasANewRandomRowChosen
+
+	for cluster = 1, numberOfClusters, 1 do
+
+		repeat
+
+			randomRow = Random.new():NextInteger(1, numberOfRows)
+
+			hasANewRandomRowChosen = not (table.find(selectedRows, randomRow))
+
+			if hasANewRandomRowChosen then
+
+				table.insert(selectedRows, randomRow)
+				modelParameters[cluster] = featureMatrix[randomRow]
+
+			end
+
+		until hasANewRandomRowChosen
+
+	end
+
+	return modelParameters
+
+end
 
 local function createClusterAssignmentMatrix(distanceMatrix) -- contains values of 0 and 1, where 0 is "does not belong to this cluster"
 	
@@ -204,7 +267,7 @@ local function calculateModelParametersMean(modelParameters, featureMatrix, dist
 	
 end
 
-function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, distanceFunction, targetCost, setInitialClustersOnDataPoints, stopWhenModelParametersDoesNotChange, suppressOutput)
+function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, distanceFunction, targetCost, setInitialClustersOnDataPoints, setTheCentroidDistanceFarthest, stopWhenModelParametersDoesNotChange, suppressOutput)
 	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 	
@@ -218,6 +281,8 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 	
 	setInitialClustersOnDataPoints = setInitialClustersOnDataPoints or defaultSetInitialClustersOnDataPoints
 	
+	setTheCentroidDistanceFarthest = setTheCentroidDistanceFarthest or defaultSetTheCentroidDistanceFarthest
+	
 	local modelParameters
 	
 	local previousModelParameters
@@ -226,9 +291,13 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 	
 	local cost
 	
-	if setInitialClustersOnDataPoints then
+	if setInitialClustersOnDataPoints and setTheCentroidDistanceFarthest then
 		
-		modelParameters = chooseRandomClusters(featureMatrix, numberOfClusters)
+		modelParameters = chooseFarthestCentroids(featureMatrix, numberOfClusters, distanceFunction)
+		
+	elseif setInitialClustersOnDataPoints and not setTheCentroidDistanceFarthest then
+		
+		modelParameters = chooseRandomCentroids(featureMatrix, numberOfClusters)
 		
 	else
 		
