@@ -61,7 +61,6 @@ local function calculateDistance(vector1, vector2, distanceFunction)
 	vector1 = AqwamMatrixLibrary:transpose(vector1)
 	vector2 = AqwamMatrixLibrary:transpose(vector2)
 
-	
 	if (distanceFunction == "euclidean") then
 		
 		distance = calculateEuclideanDistance(vector1, vector2)
@@ -98,7 +97,7 @@ local function assignToCluster(distanceFromClusterRowVector) -- Number of column
 		
 	end
 	
-	return clusterNumber
+	return clusterNumber, shortestDistance
 	
 end
 
@@ -364,24 +363,13 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 	
 end
 
-function module:predict(featureMatrix, modelParameters)
+function module:predict(featureMatrix, modelParameters, distanceFunction)
 	
-	local resultVectors = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
+	local distanceFunction = distanceFunction or defaultDistanceFunction
 	
-	local shortestDistance = math.huge
-	
-	local clusterNumber
-	
-	for index = 1, #resultVectors, 1 do
-		
-		if (resultVectors[index] < shortestDistance) then
-			
-			shortestDistance = resultVectors[index]
-			clusterNumber = index
-			
-		end
-		
-	end
+	local distanceFromClusterRowVector = createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
+
+	local clusterNumber, shortestDistance = assignToCluster(distanceFromClusterRowVector)
 	
 	return clusterNumber, shortestDistance
 	
