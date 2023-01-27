@@ -2,7 +2,7 @@ local module = {}
 
 local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
 
-local defaultMaxNumberOfIterations = 50
+local defaultMaxNumberOfIterations = 100
 
 local defaultTargetCost = 0
 
