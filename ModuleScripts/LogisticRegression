@@ -111,13 +111,13 @@ function module:train(featureMatrix, labelVector, maxNumberOfIterations, learnin
 		
 		numberOfIterations += 1
 		
-		cost = calculateCost(modelParameters, featureMatrix, labelVector, sigmoidFunction)
-		
-		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
-		
 		costFunctionDerivative = gradientDescent(modelParameters, featureMatrix, labelVector, sigmoidFunction, learningRate)
 
 		modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+		
+		cost = calculateCost(modelParameters, featureMatrix, labelVector, sigmoidFunction)
+		
+		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
 		
 	until (numberOfIterations == maxNumberOfIterations) or (math.abs(cost) <= targetCost)
 	
