@@ -29,6 +29,10 @@
 
 --]]
 
+local requiredMatrixLibraryVersion = 1.3
+
+local AqwamMatrixLibrary = require(script.AqwamRobloxMatrixLibraryLinker.Value)
+
 local LinearRegression = require(script.LinearRegression)
 local LogisticRegression = require(script.LogisticRegression)
 local KMeans = require(script.KMeans)
@@ -61,5 +65,23 @@ AqwamRobloxMachineLearningLibrary.LinearRegression = LinearRegressionDictionary
 AqwamRobloxMachineLearningLibrary.LogisticRegression = LogisticRegressionDictionary
 
 AqwamRobloxMachineLearningLibrary.KMeans = KMeansDictionary
+
+local function checkVersion()
+	
+	local matrixLibraryVersion
+	
+	local success = pcall(function()
+		
+		matrixLibraryVersion = AqwamMatrixLibrary:getVersion()
+		
+	end)
+	
+	if not success then matrixLibraryVersion = -1 end
+	
+	if (matrixLibraryVersion < requiredMatrixLibraryVersion) then warn("The matrix library is out-of-date. You may encounter some problems.") end
+	
+end
+
+checkVersion()
 
 return AqwamRobloxMachineLearningLibrary
