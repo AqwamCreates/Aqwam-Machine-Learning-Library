@@ -353,15 +353,15 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 
 		numberOfIterations += 1
 		
+		previousModelParameters = modelParameters
+
+		modelParameters = calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction)
+
+		areModelParametersEqual =  AqwamMatrixLibrary:areMatricesEqual(modelParameters, previousModelParameters)
+		
 		cost = calculateCost(modelParameters, featureMatrix, distanceFunction)
 
 		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
-		
-		previousModelParameters = modelParameters
-		
-		modelParameters = calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction)
-		
-		areModelParametersEqual =  AqwamMatrixLibrary:areMatricesEqual(modelParameters, previousModelParameters)
 
 	until (numberOfIterations == maxNumberOfIterations) or (math.abs(cost) <= targetCost) or (areModelParametersEqual and stopWhenModelParametersDoesNotChange)
 	
