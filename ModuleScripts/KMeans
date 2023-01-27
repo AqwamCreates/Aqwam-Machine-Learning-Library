@@ -14,7 +14,7 @@ local defaultStopWhenModelParametersDoesNotChange = false
 
 local defaultSetInitialClustersOnDataPoints = true
 
-local defaultSetTheCentroidsDistanceFarthest = true
+local defaultSetTheCentroidsDistanceFarthest = false
 
 local distanceFunctionList = {
 
