@@ -307,11 +307,23 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 	
 	numberOfClusters = numberOfClusters or defaultNumberOfClusters
 	
-	stopWhenModelParametersDoesNotChange = stopWhenModelParametersDoesNotChange or defaultStopWhenModelParametersDoesNotChange
+	if (type(stopWhenModelParametersDoesNotChange) ~= "boolean") then
+		
+		stopWhenModelParametersDoesNotChange = defaultStopWhenModelParametersDoesNotChange
+		
+	end
 	
-	setInitialClustersOnDataPoints = setInitialClustersOnDataPoints or defaultSetInitialClustersOnDataPoints
+	if (type(setInitialClustersOnDataPoints) ~= "boolean") then
+
+		setInitialClustersOnDataPoints = defaultSetInitialClustersOnDataPoints
+
+	end
 	
-	setTheCentroidsDistanceFarthest = setTheCentroidsDistanceFarthest or defaultSetTheCentroidsDistanceFarthest
+	if (type(setTheCentroidsDistanceFarthest) ~= "boolean") then
+
+		setTheCentroidsDistanceFarthest = defaultSetTheCentroidsDistanceFarthest
+
+	end
 	
 	local modelParameters
 	
