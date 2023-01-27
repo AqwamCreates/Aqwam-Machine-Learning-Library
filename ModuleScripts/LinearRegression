@@ -53,7 +53,7 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, loss
 	
 	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters)
 	
-	local calculatedError = AqwamMatrixLibrary:subtract(hypothesisVector, labelVector)
+	local calculatedError = AqwamMatrixLibrary:subtract(labelVector, hypothesisVector)
 	
 	local calculatedSumError =  AqwamMatrixLibrary:verticalSum(calculatedError)
 	
@@ -64,7 +64,7 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, loss
 end
 
 
-function module:train(featureMatrix, labelVector, maxNumberOfIterations, learningRate, lossFunction, targetCost, supressOutput)
+function module:train(featureMatrix, labelVector, maxNumberOfIterations, learningRate, lossFunction, targetCost, suppressOutput)
 	
 	if (#featureMatrix ~= #labelVector) then error("The feature matrix and the label vector does not contain the same number of rows!") end
 	
@@ -88,13 +88,13 @@ function module:train(featureMatrix, labelVector, maxNumberOfIterations, learnin
 		
 		numberOfIterations += 1
 		
+		costFunctionDerivative = gradientDescent(modelParameters, featureMatrix, labelVector, lossFunction, learningRate)
+
+		modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+		
 		cost = calculateCost(modelParameters, featureMatrix, labelVector, lossFunction)
 		
-		if (not supressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
-				
-		costFunctionDerivative = gradientDescent(modelParameters, featureMatrix, labelVector, lossFunction, learningRate)
-		
-		modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
 		
 	until (numberOfIterations == maxNumberOfIterations) or (math.abs(cost) <= targetCost)
 	
