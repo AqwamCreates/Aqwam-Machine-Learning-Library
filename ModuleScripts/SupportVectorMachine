@@ -74,7 +74,7 @@ local function calculateCost(modelParameters, featureMatrix, labelVector, distan
 	
 	local hypothesisVector = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
 	
-	local distanceVector = calculateDistance(labelVector, hypothesisVector, distanceFunction)
+	local distanceVector = calculateDistance(hypothesisVector, labelVector, distanceFunction)
 	
 	local squaredDistanceVector = AqwamMatrixLibrary:multiply(distanceVector, distanceVector)
 	
@@ -92,7 +92,7 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, dist
 
 	local hypothesisVector = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
 
-	local calculatedError = AqwamMatrixLibrary:subtract(labelVector, hypothesisVector)
+	local calculatedError = AqwamMatrixLibrary:subtract(hypothesisVector, labelVector)
 	
 	local calculatedErrorWithFeatureMatrix = AqwamMatrixLibrary:multiply(calculatedError, featureMatrix)
 
@@ -100,7 +100,7 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, dist
 
 	local costFunctionDerivative = AqwamMatrixLibrary:multiply(learningRate, (1/numberOfData), calculatedSumError)
 	
-	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+	modelParameters = AqwamMatrixLibrary:add(modelParameters, costFunctionDerivative)
 
 	return modelParameters
 
@@ -141,8 +141,6 @@ function module:train(featureMatrix, labelVector, maxNumberOfIterations, learnin
 		warn("The model diverged! Please repeat the experiment again or change the argument values.")
 
 	end
-	
-	modelParameters = AqwamMatrixLibrary:multiply(-1, modelParameters)
 
 	return modelParameters, cost
 
