@@ -82,7 +82,7 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, sigm
 
 	local costFunctionDerivative = AqwamMatrixLibrary:multiply(learningRate, (1/numberOfData) ,  calculatedErrorWithFeatureMatrix)
 	
-	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+	modelParameters = AqwamMatrixLibrary:add(modelParameters, costFunctionDerivative)
 	
 	return modelParameters
 	
