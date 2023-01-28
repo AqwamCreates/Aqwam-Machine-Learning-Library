@@ -37,7 +37,7 @@ local function calculateCost(modelParameters, featureMatrix, labelVector, lossFu
 	
 	for index = 1, numberOfData, 1 do
 		
-		totalCost += lossFunctionList[lossFunction] (labelVector[index][1] , hypothesisVector[index][1])
+		totalCost += lossFunctionList[lossFunction] (hypothesisVector[index][1] , labelVector[index][1])
 		
 	end
 	
@@ -59,7 +59,7 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, loss
 	
 	local costFunctionDerivative = AqwamMatrixLibrary:multiply(learningRate, (1/numberOfData), calculatedSumError)
 	
-	modelParameters = AqwamMatrixLibrary:add(modelParameters, costFunctionDerivative)
+	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
 	
 	return modelParameters
 	
