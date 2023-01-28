@@ -2,7 +2,7 @@ local module = {}
 
 local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
 
-local defaultMaxNumberOfIterations = 100
+local defaultMaxNumberOfIterations = 500
 
 local defaultTargetCost = 0
 
@@ -15,6 +15,8 @@ local defaultStopWhenModelParametersDoesNotChange = false
 local defaultSetInitialClustersOnDataPoints = true
 
 local defaultSetTheCentroidsDistanceFarthest = false
+
+local defaultLearningRate = 0.3
 
 local distanceFunctionList = {
 
@@ -277,7 +279,7 @@ local function calculateCost(modelParameters, featureMatrix, distanceFunction)
 	
 end
 
-local function calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction)
+local function calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction, learningRate)
 	
 	local distanceMatrix = createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
 
@@ -285,19 +287,25 @@ local function calculateModelParametersMean(modelParameters, featureMatrix, dist
 	
 	local sumOfAssignedCentroidVector = AqwamMatrixLibrary:verticalSum(clusterAssignmentMatrix) -- since row is the number of data in clusterAssignmentMatrix, then we vertical sum it
 	
+	local newModelParameters = AqwamMatrixLibrary:createMatrix(#modelParameters, #modelParameters[1])
+	
 	for cluster = 1, #modelParameters, 1 do
 		
 		sumOfAssignedCentroidVector[1][cluster] = math.max(1, sumOfAssignedCentroidVector[1][cluster])
 		
-		modelParameters[cluster] = AqwamMatrixLibrary:divide({modelParameters[cluster]}, sumOfAssignedCentroidVector[1][cluster])[1]
+		newModelParameters[cluster] = AqwamMatrixLibrary:divide({modelParameters[cluster]}, sumOfAssignedCentroidVector[1][cluster])[1]
 		
 	end
+	
+	local modelParametersWithLearningRate = AqwamMatrixLibrary:multiply(learningRate, newModelParameters)
+	
+	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, modelParametersWithLearningRate)
 	
 	return modelParameters
 	
 end
 
-function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, distanceFunction, targetCost, setInitialClustersOnDataPoints, setTheCentroidsDistanceFarthest, stopWhenModelParametersDoesNotChange, suppressOutput)
+function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, learningRate, distanceFunction, targetCost, setInitialClustersOnDataPoints, setTheCentroidsDistanceFarthest, stopWhenModelParametersDoesNotChange, suppressOutput)
 	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 	
@@ -306,6 +314,8 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 	distanceFunction = distanceFunction or defaultDistanceFunction
 	
 	numberOfClusters = numberOfClusters or defaultNumberOfClusters
+	
+	learningRate = learningRate or defaultLearningRate
 	
 	if (type(stopWhenModelParametersDoesNotChange) ~= "boolean") then
 		
@@ -355,7 +365,7 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, di
 		
 		previousModelParameters = modelParameters
 
-		modelParameters = calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction)
+		modelParameters = calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction, learningRate)
 
 		areModelParametersEqual =  AqwamMatrixLibrary:areMatricesEqual(modelParameters, previousModelParameters)
 		
