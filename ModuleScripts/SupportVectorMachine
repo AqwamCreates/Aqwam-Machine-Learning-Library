@@ -68,54 +68,6 @@ local function calculateDistance(vector1, vector2, distanceFunction)
 
 end
 
-local function assignToCluster(distanceFromClusterRowVector) -- Number of columns -> number of clusters
-
-	local distanceFromCluster
-
-	local shortestDistance = math.huge
-
-	local clusterNumber
-
-	for cluster = 1, #distanceFromClusterRowVector[1], 1 do
-
-		distanceFromCluster = distanceFromClusterRowVector[1][cluster]
-
-		if (distanceFromCluster < shortestDistance) then
-
-			shortestDistance = distanceFromCluster
-
-			clusterNumber = cluster
-
-		end
-
-	end
-
-	return clusterNumber, shortestDistance
-
-end
-
-local function createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
-
-	local numberOfData = #featureMatrix
-
-	local numberOfClusters = #modelParameters
-
-	local distanceMatrix = AqwamMatrixLibrary:createMatrix(numberOfData, numberOfClusters)
-
-	for datasetIndex = 1, #featureMatrix, 1 do
-
-		for cluster = 1, #modelParameters, 1 do
-
-			distanceMatrix[datasetIndex][cluster] = calculateDistance({featureMatrix[datasetIndex]}, {modelParameters[cluster]} , distanceFunction)
-
-		end
-
-	end
-
-	return distanceMatrix
-
-end
-
 local function calculateCost(modelParameters, featureMatrix, labelVector, distanceFunction, cValue)
 	
 	local hypothesisVector = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
