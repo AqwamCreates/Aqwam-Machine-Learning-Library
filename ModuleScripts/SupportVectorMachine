@@ -196,11 +196,11 @@ function module:predict(featureMatrix, modelParameters)
 	
 	local hypothesis = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
 	
-	if (hypothesis >= 0) then
+	if (hypothesis > 0) then
 		
 		return 1
 		
-	else
+	elseif (hypothesis < 0) then
 		
 		return 0
 		
