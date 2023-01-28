@@ -145,7 +145,7 @@ function module:predict(featureMatrix, modelParameters, sigmoidFunction)
 		
 		return 0
 		
-	end 
+	end
 
 end
 
