@@ -6,6 +6,8 @@ local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.
 
 local defaultMaxNumberOfIterations = 500
 
+local defaultLearningRate = 0.3
+
 local defaultCvalue = 0.3
 
 local defaultDistanceFunction = "euclidean"
@@ -72,7 +74,7 @@ local function calculateCost(modelParameters, featureMatrix, labelVector, distan
 	
 	local hypothesisVector = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
 	
-	local distanceVector = calculateDistance(hypothesisVector, labelVector, distanceFunction)
+	local distanceVector = calculateDistance(labelVector, hypothesisVector, distanceFunction)
 	
 	local squaredDistanceVector = AqwamMatrixLibrary:multiply(distanceVector, distanceVector)
 	
@@ -84,19 +86,19 @@ local function calculateCost(modelParameters, featureMatrix, labelVector, distan
 
 end
 
-local function gradientDescent(modelParameters, featureMatrix, labelVector, distanceFunction, cValue)
+local function gradientDescent(modelParameters, featureMatrix, labelVector, distanceFunction, learningRate, cValue)
 
 	local numberOfData = #featureMatrix
 
 	local hypothesisVector = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
 
-	local calculatedError = AqwamMatrixLibrary:subtract(hypothesisVector, labelVector)
+	local calculatedError = AqwamMatrixLibrary:subtract(labelVector, hypothesisVector)
 	
 	local calculatedErrorWithFeatureMatrix = AqwamMatrixLibrary:multiply(calculatedError, featureMatrix)
 
 	local calculatedSumError =  AqwamMatrixLibrary:verticalSum(calculatedError)
 
-	local costFunctionDerivative = AqwamMatrixLibrary:multiply((1/numberOfData), calculatedSumError)
+	local costFunctionDerivative = AqwamMatrixLibrary:multiply(learningRate, (1/numberOfData), calculatedSumError)
 	
 	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
 
@@ -104,13 +106,15 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, dist
 
 end
 
-function module:train(featureMatrix, labelVector, maxNumberOfIterations, cValue, distanceFunction, targetCost, suppressOutput)
+function module:train(featureMatrix, labelVector, maxNumberOfIterations, learningRate, cValue, distanceFunction, targetCost, suppressOutput)
 
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 
 	targetCost = targetCost or defaultTargetCost
 
 	distanceFunction = distanceFunction or defaultDistanceFunction
+	
+	learningRate = learningRate or defaultLearningRate
 	
 	cValue = cValue or defaultCvalue
 	
@@ -124,9 +128,9 @@ function module:train(featureMatrix, labelVector, maxNumberOfIterations, cValue,
 
 		numberOfIterations += 1
 		
-		modelParameters = gradientDescent(modelParameters, featureMatrix, labelVector, distanceFunction, cValue)
+		modelParameters = gradientDescent(modelParameters, featureMatrix, labelVector, distanceFunction, learningRate, cValue)
 
-		cost = calculateCost(modelParameters, featureMatrix, labelVector, distanceFunction, cValue)
+		cost = calculateCost(modelParameters, featureMatrix, labelVector, distanceFunction, learningRate, cValue)
 
 		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
 
