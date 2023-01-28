@@ -1,0 +1,211 @@
+local module = {}
+
+local module = {}
+
+local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
+
+local defaultMaxNumberOfIterations = 500
+
+local defaultCvalue = 0.3
+
+local defaultDistanceFunction = "euclidean"
+
+local defaultTargetCost = 0
+
+local distanceFunctionList = {
+
+	["manhattan"] = function (y, h) return math.abs(y - h) end,
+
+	["euclidean"] = function (y, h) return (y - h)^2 end,
+
+}
+
+local function calculateManhattanDistance(vector1, vector2)
+
+	local distance = 0
+
+	for row = 1, #vector1, 1 do
+
+		distance += distanceFunctionList["manhattan"](vector1[row][1], vector2[row][1])
+
+	end
+
+	return distance
+
+end
+
+local function calculateEuclideanDistance(vector1, vector2)
+
+	local squaredDistance = 0
+
+	for row = 1, #vector1, 1 do
+
+		squaredDistance += distanceFunctionList["euclidean"](vector1[row][1], vector2[row][1])
+
+	end
+
+	local distance = math.sqrt(squaredDistance)
+
+	return distance
+
+end
+
+local function calculateDistance(vector1, vector2, distanceFunction)
+
+	local distance
+
+	if (distanceFunction == "euclidean") then
+
+		distance = calculateEuclideanDistance(vector1, vector2)
+
+	elseif (distanceFunction == "manhattan") then
+
+		distance = calculateManhattanDistance(vector1, vector2)
+
+	end
+
+	return distance 
+
+end
+
+local function assignToCluster(distanceFromClusterRowVector) -- Number of columns -> number of clusters
+
+	local distanceFromCluster
+
+	local shortestDistance = math.huge
+
+	local clusterNumber
+
+	for cluster = 1, #distanceFromClusterRowVector[1], 1 do
+
+		distanceFromCluster = distanceFromClusterRowVector[1][cluster]
+
+		if (distanceFromCluster < shortestDistance) then
+
+			shortestDistance = distanceFromCluster
+
+			clusterNumber = cluster
+
+		end
+
+	end
+
+	return clusterNumber, shortestDistance
+
+end
+
+local function createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
+
+	local numberOfData = #featureMatrix
+
+	local numberOfClusters = #modelParameters
+
+	local distanceMatrix = AqwamMatrixLibrary:createMatrix(numberOfData, numberOfClusters)
+
+	for datasetIndex = 1, #featureMatrix, 1 do
+
+		for cluster = 1, #modelParameters, 1 do
+
+			distanceMatrix[datasetIndex][cluster] = calculateDistance({featureMatrix[datasetIndex]}, {modelParameters[cluster]} , distanceFunction)
+
+		end
+
+	end
+
+	return distanceMatrix
+
+end
+
+local function calculateCost(modelParameters, featureMatrix, labelVector, distanceFunction, cValue)
+	
+	local hypothesisVector = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
+	
+	local distanceVector = calculateDistance(hypothesisVector, labelVector, distanceFunction)
+	
+	local squaredDistanceVector = AqwamMatrixLibrary:multiply(distanceVector, distanceVector)
+	
+	local sum = AqwamMatrixLibrary:sum(squaredDistanceVector)
+	
+	local dotProductModelParameters =  AqwamMatrixLibrary:dotProduct(AqwamMatrixLibrary:transpose(modelParameters), modelParameters)
+	
+	local cost = (1/2 * sum) + (cValue * dotProductModelParameters)
+
+	return cost
+
+end
+
+local function gradientDescent(modelParameters, featureMatrix, labelVector, distanceFunction, cValue)
+
+	local numberOfData = #featureMatrix
+
+	local hypothesisVector = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
+
+	local calculatedError = AqwamMatrixLibrary:subtract(hypothesisVector, labelVector)
+	
+	local calculatedErrorWithFeatureMatrix = AqwamMatrixLibrary:multiply(calculatedError, featureMatrix)
+
+	local calculatedSumError =  AqwamMatrixLibrary:verticalSum(calculatedError)
+
+	local costFunctionDerivative = AqwamMatrixLibrary:multiply(cValue, (1/numberOfData), calculatedSumError)
+	
+	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+
+	return modelParameters
+
+end
+
+function module:train(featureMatrix, labelVector, maxNumberOfIterations, cValue, distanceFunction, targetCost, suppressOutput)
+
+	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
+
+	targetCost = targetCost or defaultTargetCost
+
+	distanceFunction = distanceFunction or defaultDistanceFunction
+	
+	cValue = cValue or defaultCvalue
+	
+	local modelParameters = AqwamMatrixLibrary:createRandomMatrix(#featureMatrix[1], 1)
+
+	local cost
+
+	local numberOfIterations = 0
+
+	repeat
+
+		numberOfIterations += 1
+		
+		modelParameters = gradientDescent(modelParameters, featureMatrix, labelVector, distanceFunction, cValue)
+
+		cost = calculateCost(modelParameters, featureMatrix, labelVector, distanceFunction, cValue)
+
+		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
+
+	until (numberOfIterations == maxNumberOfIterations) or (math.abs(cost) <= targetCost)
+
+	if (cost == math.huge) then
+
+		warn("The model diverged! Please repeat the experiment again or change the argument values.")
+
+	end
+
+	return modelParameters, cost
+
+end
+
+function module:predict(featureMatrix, modelParameters)
+	
+	local hypothesis = AqwamMatrixLibrary:dotProduct(featureMatrix, modelParameters)
+	
+	if (hypothesis >= 0) then
+		
+		return 1
+		
+	else
+		
+		return 0
+		
+	end 
+
+end
+
+return module
