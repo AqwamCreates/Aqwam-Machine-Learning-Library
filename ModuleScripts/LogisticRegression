@@ -82,7 +82,9 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, sigm
 
 	local costFunctionDerivative = AqwamMatrixLibrary:multiply(learningRate, (1/numberOfData) ,  calculatedErrorWithFeatureMatrix)
 	
-	return costFunctionDerivative
+	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+	
+	return modelParameters
 	
 end
 
@@ -103,17 +105,13 @@ function module:train(featureMatrix, labelVector, maxNumberOfIterations, learnin
 	
 	local numberOfIterations = 0
 	
-	local costFunctionDerivative
-	
 	local cost
 	
 	repeat
 		
 		numberOfIterations += 1
 		
-		costFunctionDerivative = gradientDescent(modelParameters, featureMatrix, labelVector, sigmoidFunction, learningRate)
-
-		modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+		modelParameters = gradientDescent(modelParameters, featureMatrix, labelVector, sigmoidFunction, learningRate)
 		
 		cost = calculateCost(modelParameters, featureMatrix, labelVector, sigmoidFunction)
 		
