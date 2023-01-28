@@ -23,7 +23,7 @@
 	GIVE CREDIT AND SOURCE WHEN USING THIS LIBRARY IF YOUR USAGE FALLS UNDER ONE OF THESE CATEGORIES:
 	
 		- USED AS A VIDEO OR ARTICLE CONTENT
-		- USED AS COMMERCIAL OR PUBLIC USE
+		- USED AS COMMERCIAL USE 
 	
 	--------------------------------------------------------------------
 
@@ -36,6 +36,7 @@ local AqwamMatrixLibrary = require(script.AqwamRobloxMatrixLibraryLinker.Value)
 local LinearRegression = require(script.LinearRegression)
 local LogisticRegression = require(script.LogisticRegression)
 local KMeans = require(script.KMeans)
+local SupportVectorMachine = require(script.SupportVectorMachine)
 
 local LinearRegressionDictionary = {
 	
@@ -58,6 +59,13 @@ local KMeansDictionary = {
 	
 }
 
+local SupportVectorMachineDictionary = {
+
+	train = SupportVectorMachine.train,
+	predict = SupportVectorMachine.predict
+
+}
+
 local AqwamRobloxMachineLearningLibrary = {}
 
 AqwamRobloxMachineLearningLibrary.LinearRegression = LinearRegressionDictionary
@@ -65,6 +73,8 @@ AqwamRobloxMachineLearningLibrary.LinearRegression = LinearRegressionDictionary
 AqwamRobloxMachineLearningLibrary.LogisticRegression = LogisticRegressionDictionary
 
 AqwamRobloxMachineLearningLibrary.KMeans = KMeansDictionary
+
+AqwamRobloxMachineLearningLibrary.SupportVectorMachine = SupportVectorMachineDictionary
 
 local function checkVersion()
 	
