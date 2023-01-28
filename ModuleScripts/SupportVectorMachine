@@ -141,6 +141,8 @@ function module:train(featureMatrix, labelVector, maxNumberOfIterations, learnin
 		warn("The model diverged! Please repeat the experiment again or change the argument values.")
 
 	end
+	
+	modelParameters = AqwamMatrixLibrary:multiply(-1, modelParameters)
 
 	return modelParameters, cost
 
