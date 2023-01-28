@@ -53,13 +53,13 @@ local function gradientDescent(modelParameters, featureMatrix, labelVector, loss
 	
 	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters)
 	
-	local calculatedError = AqwamMatrixLibrary:subtract(labelVector, hypothesisVector)
+	local calculatedError = AqwamMatrixLibrary:subtract(hypothesisVector, labelVector)
 	
 	local calculatedSumError =  AqwamMatrixLibrary:verticalSum(calculatedError)
 	
 	local costFunctionDerivative = AqwamMatrixLibrary:multiply(learningRate, (1/numberOfData), calculatedSumError)
 	
-	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, costFunctionDerivative)
+	modelParameters = AqwamMatrixLibrary:add(modelParameters, costFunctionDerivative)
 	
 	return modelParameters
 	
