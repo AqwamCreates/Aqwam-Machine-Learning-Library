@@ -78,9 +78,7 @@ local function calculateCost(modelParameters, featureMatrix, labelVector, distan
 	
 	local sum = AqwamMatrixLibrary:sum(squaredDistanceVector)
 	
-	local dotProductModelParameters =  AqwamMatrixLibrary:dotProduct(AqwamMatrixLibrary:transpose(modelParameters), modelParameters)
-	
-	local cost = (1/2 * sum) + (cValue * dotProductModelParameters)
+	local cost = (1/2 * sum)
 
 	return cost
 
