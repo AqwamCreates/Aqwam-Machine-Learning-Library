@@ -269,6 +269,8 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 			
 		end
 		
+		wait(2)
+		
 		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
 		
 	until (numberOfIterations == maxNumberOfIterations) or (cost <= epsilon)
