@@ -271,7 +271,7 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 		
 		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
 		
-	until (numberOfIterations == 10) or (cost <= epsilon)
+	until (numberOfIterations == maxNumberOfIterations) or (cost <= epsilon)
 	
 	return meanMatrix, probabilitiesMatrix
 	
