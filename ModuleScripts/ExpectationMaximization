@@ -20,156 +20,150 @@ local function calculateFactorial(x)
 	
 end
 
-
-local function calculatePoissonPosterior(k, featureVector, lambdas, probabilities)
+local function calculatePoisson(featureVector, meanVector)
 	
-	-- lambdas and probabilities = multiple rows and one column
+	local negativeMeanVector = AqwamMatrixLibrary:multiply(-1, meanVector)
 	
-	local numberOfLambdas = #lambdas
+	local expNegativeMeanVector = AqwamMatrixLibrary:applyFunction(math.exp, negativeMeanVector)
 	
-	local posteriorProbabilities = {}
+	local factorialFeatureVector = AqwamMatrixLibrary:applyFunction(calculateFactorial, featureVector)
 	
-	local posteriorProbability
+	local inverseFactorialFeatureVector = AqwamMatrixLibrary:divide(1, factorialFeatureVector)
 	
-	local posteriorProbabilitiesSum = 0
-	
-	for index = 1, numberOfLambdas, 1 do
-		
-		posteriorProbability = AqwamMatrixLibrary:multiply(lambdas[index][1], math.exp(-lambdas[index][1]), calculateFactorial(featureVector), probabilities[index][1])
-		
-		posteriorProbabilitiesSum += posteriorProbability
-		
-		table.insert(posteriorProbabilities, posteriorProbability) 
-		
-	end
-	
-	return posteriorProbabilities[k] / posteriorProbabilitiesSum
+	return AqwamMatrixLibrary:multiply(featureVector, meanVector, expNegativeMeanVector, inverseFactorialFeatureVector)
 	
 end
 
-local function calculatePoissonPosteriorForFeatureMatrix(featureMatrix, lambdas, probabilities)
+local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabilities)
 	
-	local posteriorVector = {}
+	local featureVector
 	
-	local posterior
+	local meanVector
 	
 	local eachClass
 	
-	local featureVector
+	local eachClassSum
 	
-	for index = 1, #featureMatrix, 1 do
-		
-		eachClass = {}
-		
-		featureVector = {featureMatrix[1]}
-		
-		posterior = calculatePoissonPosterior(1, featureVector, lambdas, probabilities)
-		
-		table.insert(posteriorVector, {posterior})
-		
-	end
+	local probability
 	
-	return posteriorVector -- (n x 1)
+	local poisson
 	
-end
-
-local function calculateOptimalPi(posteriorVector)
-	
-	-- Get posterior for each cluster
-	
-	local A1 = {posteriorVector[1]}
-	
-	local A2  = {posteriorVector[2]}
-	
-	local A1PlusA2 = AqwamMatrixLibrary:add(A1, A2)
-	
-	local pi1 = AqwamMatrixLibrary:sum(A1) / AqwamMatrixLibrary:sum(A1PlusA2)
-	
-	return pi1, (1-pi1)
-	
-end
-
-local function calculateOptimalLambda(featureMatrix, posterior)
-	
-	local newLambdas = AqwamMatrixLibrary:createMatrix(#posterior, 1)
-	
-	local A
-	
-	local Numerator
-	
-	local lambda
-	
-	for i = 1, #posterior, 1 do
-		
-		A = posterior[i]
-		
-		Numerator = AqwamMatrixLibrary:multiply(featureMatrix, A)
-		
-		lambda = AqwamMatrixLibrary:sum(Numerator) /AqwamMatrixLibrary:sum(A)
-		
-		newLambdas[i][1] = lambda
-		
-	end
-
-	return newLambdas -- (n x 1)
-	
-end
-
-local function calculateIncompleteLogLikelihood(featureMatrix, lambdas, probabilities)
-	
-	local logLikeVector = {}
-	
-	local logLike
-	
-	local featureVector
-	
-	local likelihood
-	
-	local likelihoodVector
-	
-	local incomplete
+	local posterior = AqwamMatrixLibrary:createMatrix(3,2)
 	
 	for i = 1, #featureMatrix, 1 do
 		
-		likelihoodVector = {}
+		featureVector = {featureMatrix[i]}
 		
-		for j = 1, #lambdas, 1 do
+		for j = 1, #meanMatrix, 1 do
 			
-			featureVector = featureMatrix[i]
-
-			likelihood = Poisson(featureVector, lambdas[1])
-
-			table.insert(likelihoodVector, likelihood)
+			meanVector = {meanMatrix[j]}
+			
+			probability = {probabilities[j]}
+			
+			poisson = calculatePoisson(featureVector, meanMatrix)
+			
+			eachClass = AqwamMatrixLibrary:multiply(poisson, probability)
 			
 		end
 		
-		logLike = AqwamMatrixLibrary:log(AqwamMatrixLibrary:sum(likelihoodVector))
+		eachClassSum = AqwamMatrixLibrary:sum(eachClass)
 		
-		table.insert(logLikeVector, logLike)
+		posterior = AqwamMatrixLibrary:add(posterior, AqwamMatrixLibrary:divide(eachClass, eachClassSum))
 		
 	end
 	
-	incomplete = AqwamMatrixLibrary:sum(logLikeVector)
-	
-	return incomplete
+	return posterior
 	
 end
+
+local function calculateOptimalProbability(posteriorMatrix)
+	
+	local numberOfProbabilities = #posteriorMatrix
+	
+	local posteriorMatrixSum = AqwamMatrixLibrary:verticalSum(posteriorMatrix)
+	
+	local probabilitiesMatrix = {}
+	
+	local probability
+	
+	local posteriorVector
+	
+	for i = 1, numberOfProbabilities, 1 do
+		
+		posteriorVector = {posteriorMatrix[i]}
+		
+		probability = AqwamMatrixLibrary:divide(posteriorVector, posteriorMatrixSum)
+		
+		probabilitiesMatrix[i] = probability[1]
+		
+	end
+	
+	return probabilitiesMatrix
+	
+end
+
+local function calculateOptimalMean(featureMatrix, posteriorMatrix)
+	
+	local featureVector
+	
+	local posteriorVector
+	
+	local transposedPosteriorVector
+	
+	local Numerator
+	
+	local NumeratorSum
+	
+	local newMeanVector
+	
+	local posteriorVectorSum
+	
+	local newMeanMatrix = {}
+	
+	local featureVector 
+
+	for i = 1, #posteriorMatrix, 1 do
+
+		posteriorVector = {posteriorMatrix[i]}
+		
+		Numerator = {}
+		
+		for j = 1, #featureMatrix, 1 do
+			
+			featureVector = {featureMatrix[j]}
+			
+			Numerator[j] = AqwamMatrixLibrary:multiply(featureVector, posteriorVector)[1] -- [1] is added so that we remove 1 dimension to merge with the Numerator
+			
+		end
+		
+		NumeratorSum = AqwamMatrixLibrary:verticalSum(Numerator)
+		
+		newMeanVector = AqwamMatrixLibrary:divide(NumeratorSum, posteriorVector)
+		
+		newMeanMatrix[i] = newMeanVector[1] -- [1] is added so that we remove 1 dimension to merge with the newMeanMatrix
+ 		
+	end
+	
+	return newMeanMatrix
+	
+end
+
 
 function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, epsilon, suppressOutput)
 	
 	local incompletes = {}
 	
-	local delta = 1
+	local cost = 1
 	
 	epsilon = epsilon or defaultEpsilon
 	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 	
-	local posteriorVector -- (n x 1)
+	local posteriorMatrix
 	
-	local probabilities = AqwamMatrixLibrary:createRandomNormalMatrix(numberOfClusters, 1)
+	local probabilitiesMatrix = AqwamMatrixLibrary:createRandomNormalMatrix(numberOfClusters, #featureMatrix[1])
 	
-	local lambdas = AqwamMatrixLibrary:createRandomNormalMatrix(numberOfClusters, 1)
+	local meanMatrix = AqwamMatrixLibrary:createRandomNormalMatrix(numberOfClusters, #featureMatrix[1])
 	
 	local incompleteLogLikelihood
 	
@@ -183,31 +177,17 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 		
 		numberOfIterations += 1
 		
-		posteriorVector = calculatePoissonPosteriorForFeatureMatrix(featureMatrix, lambdas, probabilities)
+		posteriorMatrix = calculatePosteriorProbability(featureMatrix, meanMatrix, probabilitiesMatrix)
 		
-		probabilities = calculateOptimalPi(posteriorVector)
+		probabilitiesMatrix = calculateOptimalProbability(posteriorMatrix)
 		
-		lambdas = calculateOptimalLambda(featureMatrix, posteriorVector)
+		meanMatrix = calculateOptimalMean(featureMatrix, posteriorMatrix)
 		
-		incompleteLogLikelihood = calculateIncompleteLogLikelihood(featureMatrix, lambdas, probabilities)
+		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
 		
-		table.insert(incompleteLogLikelihood)
-		
-		if (#incompletes > 1) then
-			
-			current = incompletes[#incompletes]
-			
-			previous = incompletes[#incompletes - 1]
-			
-			delta = current - previous
-			
-		end
-		
-		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. delta) end
-		
-	until (maxNumberOfIterations == numberOfIterations) or (delta <= epsilon)
+	until (maxNumberOfIterations == numberOfIterations) or (cost <= epsilon)
 	
-	return lambdas, probabilities
+	return meanMatrix, probabilitiesMatrix
 	
 end
 
