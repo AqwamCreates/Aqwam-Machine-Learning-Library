@@ -6,6 +6,22 @@ local defaultEpsilon = 1 * math.exp(-5)
 
 local defaultMaxNumberOfIterations = 500
 
+local function calculateEuclideanDistance(vector1, vector2)
+
+	local squaredDistance = 0
+
+	for row = 1, #vector1, 1 do
+
+		squaredDistance += (vector1[row][1] - vector2[row][1])
+
+	end
+
+	local distance = math.sqrt(squaredDistance)
+
+	return distance
+
+end
+
 local function calculateFactorial(x)
 	
 	if (x > 1) then
@@ -148,6 +164,62 @@ local function calculateOptimalMean(featureMatrix, posteriorMatrix)
 	
 end
 
+local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, probabilitiesMatrix)
+	
+	local logLikesMatrix = {}
+	
+	local logLikeVector
+	
+	local likelihoodMatrix
+	
+	local likelihoodVector
+	
+	local featureVector
+	
+	local meanVector
+	
+	local probability
+	
+	local poisson
+	
+	local likelihoodMatrixSum
+	
+	local incomplete
+	
+	for i = 1, #featureMatrix, 1 do
+		
+		featureVector = {featureMatrix[i]}
+		
+		likelihoodMatrix = {}
+		
+		for j = 1, #meanMatrix, 1 do
+			
+			probability = {probabilitiesMatrix[j]}
+			
+			meanVector = {meanMatrix[j]}
+			
+			poisson = calculatePoisson(featureVector, meanVector)
+			
+			likelihoodVector = AqwamMatrixLibrary:multiply(poisson, probability)
+			
+			likelihoodMatrix[j] = likelihoodVector[1]
+			
+		end
+		
+		likelihoodMatrixSum = AqwamMatrixLibrary:verticalSum(likelihoodMatrix)
+		
+		logLikeVector = AqwamMatrixLibrary:logarithm(likelihoodMatrixSum, 10)
+		
+		logLikesMatrix[i] = logLikeVector[1]
+		
+	end
+	
+	incomplete = AqwamMatrixLibrary:sum(logLikesMatrix)
+	
+	return incomplete
+	
+end
+
 
 function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, epsilon, suppressOutput)
 	
@@ -183,11 +255,59 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 		
 		meanMatrix = calculateOptimalMean(featureMatrix, posteriorMatrix)
 		
+		incompleteLogLikelihood = calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, probabilitiesMatrix)
+		
+		table.insert(incompletes, incompleteLogLikelihood)
+		
+		if (#incompletes > 1) then
+			
+			current = incompletes[#incompletes]
+			
+			previous = incompletes[#incompletes - 1]
+			
+			cost = current - previous
+			
+		end
+		
 		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
 		
-	until (maxNumberOfIterations == numberOfIterations) or (cost <= epsilon)
+	until (numberOfIterations == 10) or (cost <= epsilon)
 	
 	return meanMatrix, probabilitiesMatrix
+	
+end
+
+function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
+	
+	local calculateDistance = function(x, y) return (x - y) end
+	
+	local posteriorVector
+	
+	local closestCluster
+	
+	local distance
+	
+	local closestDistance = math.huge
+	
+	local posteriorMatrix = calculatePosteriorProbability(featureVector, meanMatrix, probabilitiesMatrix)
+	
+	for i = 1, #posteriorMatrix, 1 do
+		
+		posteriorVector = {posteriorMatrix[i]}
+		
+		distance = calculateEuclideanDistance(AqwamMatrixLibrary:transpose(posteriorVector), AqwamMatrixLibrary:transpose(featureVector))
+		
+		if (distance < closestDistance) then
+			
+			closestCluster = i
+			
+			closestDistance = distance
+			
+		end
+		 
+	end
+	
+	return closestCluster, distance
 	
 end
 
