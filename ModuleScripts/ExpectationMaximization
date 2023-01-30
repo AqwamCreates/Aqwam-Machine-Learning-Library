@@ -1,0 +1,214 @@
+local module = {}
+
+local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
+
+local defaultEpsilon = 1 * math.exp(-5)
+
+local defaultMaxNumberOfIterations = 500
+
+local function calculateFactorial(x)
+	
+	if (x > 1) then
+		
+		return x * calculateFactorial(x-1)
+		
+	else
+		
+		return x
+		
+	end
+	
+end
+
+
+local function calculatePoissonPosterior(k, featureVector, lambdas, probabilities)
+	
+	-- lambdas and probabilities = multiple rows and one column
+	
+	local numberOfLambdas = #lambdas
+	
+	local posteriorProbabilities = {}
+	
+	local posteriorProbability
+	
+	local posteriorProbabilitiesSum = 0
+	
+	for index = 1, numberOfLambdas, 1 do
+		
+		posteriorProbability = AqwamMatrixLibrary:multiply(lambdas[index][1], math.exp(-lambdas[index][1]), calculateFactorial(featureVector), probabilities[index][1])
+		
+		posteriorProbabilitiesSum += posteriorProbability
+		
+		table.insert(posteriorProbabilities, posteriorProbability) 
+		
+	end
+	
+	return posteriorProbabilities[k] / posteriorProbabilitiesSum
+	
+end
+
+local function calculatePoissonPosteriorForFeatureMatrix(featureMatrix, lambdas, probabilities)
+	
+	local posteriorVector = {}
+	
+	local posterior
+	
+	local eachClass
+	
+	local featureVector
+	
+	for index = 1, #featureMatrix, 1 do
+		
+		eachClass = {}
+		
+		featureVector = {featureMatrix[1]}
+		
+		posterior = calculatePoissonPosterior(1, featureVector, lambdas, probabilities)
+		
+		table.insert(posteriorVector, {posterior})
+		
+	end
+	
+	return posteriorVector -- (n x 1)
+	
+end
+
+local function calculateOptimalPi(posteriorVector)
+	
+	-- Get posterior for each cluster
+	
+	local A1 = {posteriorVector[1]}
+	
+	local A2  = {posteriorVector[2]}
+	
+	local A1PlusA2 = AqwamMatrixLibrary:add(A1, A2)
+	
+	local pi1 = AqwamMatrixLibrary:sum(A1) / AqwamMatrixLibrary:sum(A1PlusA2)
+	
+	return pi1, (1-pi1)
+	
+end
+
+local function calculateOptimalLambda(featureMatrix, posterior)
+	
+	local newLambdas = AqwamMatrixLibrary:createMatrix(#posterior, 1)
+	
+	local A
+	
+	local Numerator
+	
+	local lambda
+	
+	for i = 1, #posterior, 1 do
+		
+		A = posterior[i]
+		
+		Numerator = AqwamMatrixLibrary:multiply(featureMatrix, A)
+		
+		lambda = AqwamMatrixLibrary:sum(Numerator) /AqwamMatrixLibrary:sum(A)
+		
+		newLambdas[i][1] = lambda
+		
+	end
+
+	return newLambdas -- (n x 1)
+	
+end
+
+local function calculateIncompleteLogLikelihood(featureMatrix, lambdas, probabilities)
+	
+	local logLikeVector = {}
+	
+	local logLike
+	
+	local featureVector
+	
+	local likelihood
+	
+	local likelihoodVector
+	
+	local incomplete
+	
+	for i = 1, #featureMatrix, 1 do
+		
+		likelihoodVector = {}
+		
+		for j = 1, #lambdas, 1 do
+			
+			featureVector = featureMatrix[i]
+
+			likelihood = Poisson(featureVector, lambdas[1])
+
+			table.insert(likelihoodVector, likelihood)
+			
+		end
+		
+		logLike = AqwamMatrixLibrary:log(AqwamMatrixLibrary:sum(likelihoodVector))
+		
+		table.insert(logLikeVector, logLike)
+		
+	end
+	
+	incomplete = AqwamMatrixLibrary:sum(logLikeVector)
+	
+	return incomplete
+	
+end
+
+function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, epsilon, suppressOutput)
+	
+	local incompletes = {}
+	
+	local delta = 1
+	
+	epsilon = epsilon or defaultEpsilon
+	
+	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
+	
+	local posteriorVector -- (n x 1)
+	
+	local probabilities = AqwamMatrixLibrary:createRandomNormalMatrix(numberOfClusters, 1)
+	
+	local lambdas = AqwamMatrixLibrary:createRandomNormalMatrix(numberOfClusters, 1)
+	
+	local incompleteLogLikelihood
+	
+	local current
+	
+	local previous
+	
+	local numberOfIterations = 0
+	
+	repeat
+		
+		numberOfIterations += 1
+		
+		posteriorVector = calculatePoissonPosteriorForFeatureMatrix(featureMatrix, lambdas, probabilities)
+		
+		probabilities = calculateOptimalPi(posteriorVector)
+		
+		lambdas = calculateOptimalLambda(featureMatrix, posteriorVector)
+		
+		incompleteLogLikelihood = calculateIncompleteLogLikelihood(featureMatrix, lambdas, probabilities)
+		
+		table.insert(incompleteLogLikelihood)
+		
+		if (#incompletes > 1) then
+			
+			current = incompletes[#incompletes]
+			
+			previous = incompletes[#incompletes - 1]
+			
+			delta = current - previous
+			
+		end
+		
+		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. delta) end
+		
+	until (maxNumberOfIterations == numberOfIterations) or (delta <= epsilon)
+	
+	return lambdas, probabilities
+	
+end
+
+return module
