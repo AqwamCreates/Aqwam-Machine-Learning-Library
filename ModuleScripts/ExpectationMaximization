@@ -4,7 +4,7 @@ local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.
 
 local defaultEpsilon = 1 * math.exp(-5)
 
-local defaultMaxNumberOfIterations = 500
+local defaultMaxNumberOfIterations = 3
 
 local function calculateEuclideanDistance(vector1, vector2)
 
@@ -12,7 +12,7 @@ local function calculateEuclideanDistance(vector1, vector2)
 
 	for row = 1, #vector1, 1 do
 
-		squaredDistance += (vector1[row][1] - vector2[row][1])
+		squaredDistance += (vector1[row][1] - vector2[row][1])^2
 
 	end
 
