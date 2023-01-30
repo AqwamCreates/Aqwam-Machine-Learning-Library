@@ -279,8 +279,6 @@ end
 
 function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
 	
-	local calculateDistance = function(x, y) return (x - y) end
-	
 	local posteriorVector
 	
 	local closestCluster
