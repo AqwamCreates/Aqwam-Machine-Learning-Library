@@ -64,7 +64,7 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 	
 	local poisson
 	
-	local posterior = AqwamMatrixLibrary:createMatrix(#meanMatrix, #meanMatrix[1], 0)
+	local posteriorMatrix = AqwamMatrixLibrary:createMatrix(#meanMatrix, #meanMatrix[1], 0)
 	
 	local eachClassDividedByEachClassSum
 	
@@ -94,11 +94,11 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		
 		if not AqwamMatrixLibrary:areMatricesEqual(eachClassDividedByEachClassSum, eachClassDividedByEachClassSum) then continue end -- A quick fix to nan issue
 		
-		posterior = AqwamMatrixLibrary:add(posterior, eachClassDividedByEachClassSum)
+		posteriorMatrix = AqwamMatrixLibrary:add(posteriorMatrix, eachClassDividedByEachClassSum)
 		
 	end
 	
-	return posterior
+	return posteriorMatrix
 	
 end
 
