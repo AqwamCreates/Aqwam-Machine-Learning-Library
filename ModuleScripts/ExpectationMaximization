@@ -239,7 +239,7 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 	
 	local cost = math.huge
 	
-	epsilon = epsilon or defaultEpsilon
+	epsilon = epsilon or (defaultEpsilon * #featureMatrix)
 	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 	
