@@ -68,6 +68,8 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 	
 	local eachClassDividedByEachClassSum
 	
+	local inverseEachClassSum
+	
 	for i = 1, #featureMatrix, 1 do
 		
 		featureVector = {featureMatrix[i]}
@@ -86,9 +88,9 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		
 		eachClassSum = AqwamMatrixLibrary:sum(eachClass)
 		
-		eachClassDividedByEachClassSum = AqwamMatrixLibrary:divide(eachClass, eachClassSum)
+		inverseEachClassSum =  1/eachClassSum
 		
-		AqwamMatrixLibrary:printMatrix(posterior)
+		eachClassDividedByEachClassSum = AqwamMatrixLibrary:multiply(eachClass, inverseEachClassSum)
 		
 		posterior = AqwamMatrixLibrary:add(posterior, eachClassDividedByEachClassSum) -- Nan starts here (perhaps decimal places too long?)
 		
