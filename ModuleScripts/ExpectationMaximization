@@ -90,9 +90,9 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		
 		inverseEachClassSum =  1/eachClassSum
 		
-		eachClassDividedByEachClassSum = AqwamMatrixLibrary:multiply(eachClass, inverseEachClassSum)
+		eachClassDividedByEachClassSum = AqwamMatrixLibrary:multiply(eachClass, inverseEachClassSum) -- Sometimes generate nan values. When added to non-nan values, the matrix will contain nan
 		
-		posterior = AqwamMatrixLibrary:add(posterior, eachClassDividedByEachClassSum) -- Nan starts here (perhaps decimal places too long?)
+		posterior = AqwamMatrixLibrary:add(posterior, eachClassDividedByEachClassSum)
 		
 	end
 	
