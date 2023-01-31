@@ -64,7 +64,9 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 	
 	local poisson
 	
-	local posterior = AqwamMatrixLibrary:createMatrix(3,2)
+	local posterior = AqwamMatrixLibrary:createMatrix(#meanMatrix, #meanMatrix[1], 0)
+	
+	local eachClassDividedByEachClassSum
 	
 	for i = 1, #featureMatrix, 1 do
 		
@@ -84,7 +86,11 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		
 		eachClassSum = AqwamMatrixLibrary:sum(eachClass)
 		
-		posterior = AqwamMatrixLibrary:add(posterior, AqwamMatrixLibrary:divide(eachClass, eachClassSum))
+		eachClassDividedByEachClassSum = AqwamMatrixLibrary:divide(eachClass, eachClassSum)
+		
+		AqwamMatrixLibrary:printMatrix(posterior)
+		
+		posterior = AqwamMatrixLibrary:add(posterior, eachClassDividedByEachClassSum) -- Nan starts here (perhaps decimal places too long?)
 		
 	end
 	
