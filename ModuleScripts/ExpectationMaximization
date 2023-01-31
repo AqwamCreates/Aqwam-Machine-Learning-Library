@@ -283,6 +283,8 @@ function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
 	
 	local highestProbability = -math.huge
 	
+	local probabilityVector
+	
 	local posteriorMatrix = calculatePosteriorProbability(featureVector, meanMatrix, probabilitiesMatrix)
 	
 	local posteriorMatrixSum = AqwamMatrixLibrary:horizontalSum(posteriorMatrix)
@@ -295,13 +297,15 @@ function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
 			
 			selectedCluster = cluster
 			
+			probabilityVector = {posteriorMatrix[cluster][1]}
+			
 			highestProbability = probability
 			
 		end
 		 
 	end
 	
-	return selectedCluster, highestProbability
+	return selectedCluster, probabilityVector
 	
 end
 
