@@ -6,22 +6,6 @@ local defaultEpsilon = 1 * math.exp(-5)
 
 local defaultMaxNumberOfIterations = 500
 
-local function calculateEuclideanDistance(vector1, vector2)
-
-	local squaredDistance = 0
-
-	for row = 1, #vector1, 1 do
-
-		squaredDistance += (vector1[row][1] - vector2[row][1])^2
-
-	end
-
-	local distance = math.sqrt(squaredDistance)
-
-	return distance
-
-end
-
 local function calculateFactorial(x)
 	
 	if (x > 1) then
@@ -293,31 +277,31 @@ function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
 	
 	local posteriorVector
 	
-	local closestCluster
+	local selectedCluster
 	
-	local distance
+	local probability
 	
-	local closestDistance = math.huge
+	local highestProbability = -math.huge
 	
 	local posteriorMatrix = calculatePosteriorProbability(featureVector, meanMatrix, probabilitiesMatrix)
 	
-	for i = 1, #posteriorMatrix, 1 do
+	local posteriorMatrixSum = AqwamMatrixLibrary:horizontalSum(posteriorMatrix)
+	
+	for cluster = 1, #posteriorMatrix, 1 do
 		
-		posteriorVector = {posteriorMatrix[i]}
+		probability = posteriorMatrix[cluster][1]
 		
-		distance = calculateEuclideanDistance(AqwamMatrixLibrary:transpose(posteriorVector), AqwamMatrixLibrary:transpose(featureVector))
-		
-		if (distance < closestDistance) then
+		if (probability > highestProbability) then
 			
-			closestCluster = i
+			selectedCluster = cluster
 			
-			closestDistance = distance
+			highestProbability = probability
 			
 		end
 		 
 	end
 	
-	return closestCluster, distance
+	return selectedCluster, highestProbability
 	
 end
 
