@@ -237,7 +237,7 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 	
 	local incompletes = {}
 	
-	local cost = 1
+	local cost = math.huge
 	
 	epsilon = epsilon or defaultEpsilon
 	
