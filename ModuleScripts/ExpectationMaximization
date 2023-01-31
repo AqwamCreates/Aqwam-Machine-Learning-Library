@@ -92,6 +92,8 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		
 		eachClassDividedByEachClassSum = AqwamMatrixLibrary:multiply(eachClass, inverseEachClassSum) -- Sometimes generate nan values. When added to non-nan values, the matrix will contain nan
 		
+		if not AqwamMatrixLibrary:areMatricesEqual(eachClassDividedByEachClassSum, eachClassDividedByEachClassSum) then continue end -- A quick fix to nan issue
+		
 		posterior = AqwamMatrixLibrary:add(posterior, eachClassDividedByEachClassSum)
 		
 	end
@@ -174,13 +176,15 @@ end
 
 local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, probabilitiesMatrix)
 	
-	local logLikesMatrix = {}
+	local logLikesVector = {}
 	
-	local logLikeVector
+	local logLike
 	
-	local likelihoodMatrix
+	local likelihood
 	
-	local likelihoodVector
+	local likelihoodVector = {}
+	
+	local likelihoodVectorSum
 	
 	local featureVector
 	
@@ -190,15 +194,13 @@ local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, proba
 	
 	local poisson
 	
-	local likelihoodMatrixSum
-	
 	local incomplete
+	
+	local probabilityTransposed
 	
 	for i = 1, #featureMatrix, 1 do
 		
 		featureVector = {featureMatrix[i]}
-		
-		likelihoodMatrix = {}
 		
 		for j = 1, #meanMatrix, 1 do
 			
@@ -208,21 +210,23 @@ local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, proba
 			
 			poisson = calculatePoisson(featureVector, meanVector)
 			
-			likelihoodVector = AqwamMatrixLibrary:multiply(poisson, probability)
+			probabilityTransposed = AqwamMatrixLibrary:transpose(probability)
 			
-			likelihoodMatrix[j] = likelihoodVector[1]
+			likelihood = AqwamMatrixLibrary:dotProduct(poisson, probabilityTransposed)
+			
+			table.insert(likelihoodVector, {likelihood})
 			
 		end
 		
-		likelihoodMatrixSum = AqwamMatrixLibrary:verticalSum(likelihoodMatrix)
+		likelihoodVectorSum = AqwamMatrixLibrary:sum(likelihoodVector)
 		
-		logLikeVector = AqwamMatrixLibrary:logarithm(likelihoodMatrixSum, 10)
+		logLike = math.log10(likelihoodVectorSum)
 		
-		logLikesMatrix[i] = logLikeVector[1]
+		table.insert(logLikesVector, {logLike})
 		
 	end
 	
-	incomplete = AqwamMatrixLibrary:sum(logLikesMatrix)
+	incomplete = AqwamMatrixLibrary:sum(logLikesVector)
 	
 	return incomplete
 	
@@ -276,8 +280,6 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 			cost = current - previous
 			
 		end
-		
-		wait(2)
 		
 		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
 		
