@@ -206,11 +206,9 @@ local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, proba
 			
 		end
 		
-		likelihoodVectorSum = AqwamMatrixLibrary:sum(likelihoodVector)
-		
-		logLike = math.log10(likelihoodVectorSum)
-		
-		table.insert(logLikesVector, {logLike})
+		logLike = AqwamMatrixLibrary:applyFunction(math.log10, likelihoodVector)
+			
+		table.insert(logLikesVector, logLike[1])
 		
 	end
 	
