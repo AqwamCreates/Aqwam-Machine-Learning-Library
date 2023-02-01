@@ -8,7 +8,7 @@ local defaultMaxNumberOfIterations = 500
 
 local function calculateFactorial(x)
 	
-	if (x > 1) then
+	if (x > 0) then
 		
 		return x * calculateFactorial(x-1)
 		
@@ -20,21 +20,29 @@ local function calculateFactorial(x)
 	
 end
 
-local function calculatePoisson(featureVector, meanVector)
+local function calculatePoisson(meanVector, numberOfData)
 	
 	local negativeMeanVector = AqwamMatrixLibrary:multiply(-1, meanVector)
 	
 	local expNegativeMeanVector = AqwamMatrixLibrary:applyFunction(math.exp, negativeMeanVector)
 	
-	local factorialFeatureVector = AqwamMatrixLibrary:applyFunction(calculateFactorial, featureVector)
+	local factorialNumberOfData = calculateFactorial(numberOfData)
 	
-	local inverseFactorialFeatureVector = AqwamMatrixLibrary:divide(1, factorialFeatureVector)
+	local inverseFactorialNumberOfData = 1/factorialNumberOfData
 	
-	return AqwamMatrixLibrary:multiply(featureVector, meanVector, expNegativeMeanVector, inverseFactorialFeatureVector)
+	local meanVectorPoweredByNumberOfData = AqwamMatrixLibrary:power(meanVector,numberOfData)
+	
+	local calculatedPoisson = AqwamMatrixLibrary:multiply(meanVectorPoweredByNumberOfData, expNegativeMeanVector, inverseFactorialNumberOfData)
+	
+	return calculatedPoisson
 	
 end
 
 local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabilities)
+	
+	local posteriorMatrix = AqwamMatrixLibrary:createMatrix(#meanMatrix, #meanMatrix[1], 0)
+	
+	local numberOfData = #featureMatrix
 	
 	local featureVector
 	
@@ -47,8 +55,6 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 	local probability
 	
 	local poisson
-	
-	local posteriorMatrix = AqwamMatrixLibrary:createMatrix(#meanMatrix, #meanMatrix[1], 0)
 	
 	local eachClassDividedByEachClassSum
 	
@@ -64,7 +70,7 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 			
 			probability = {probabilities[j]}
 			
-			poisson = calculatePoisson(featureVector, meanMatrix)
+			poisson = calculatePoisson(meanMatrix, numberOfData)
 			
 			eachClass = AqwamMatrixLibrary:multiply(poisson, probability)
 			
@@ -160,6 +166,8 @@ end
 
 local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, probabilitiesMatrix)
 	
+	local numberOfData = #featureMatrix
+	
 	local logLikesVector = {}
 	
 	local logLike
@@ -192,7 +200,7 @@ local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, proba
 			
 			meanVector = {meanMatrix[j]}
 			
-			poisson = calculatePoisson(featureVector, meanVector)
+			poisson = calculatePoisson(meanVector, numberOfData)
 			
 			probabilityTransposed = AqwamMatrixLibrary:transpose(probability)
 			
@@ -202,11 +210,9 @@ local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, proba
 			
 		end
 		
-		likelihoodVectorSum = AqwamMatrixLibrary:sum(likelihoodVector)
-		
-		logLike = math.log10(likelihoodVectorSum)
-		
-		table.insert(logLikesVector, {logLike})
+		logLike = AqwamMatrixLibrary:applyFunction(math.log10, likelihoodVector)
+			
+		table.insert(logLikesVector, logLike[1])
 		
 	end
 	
