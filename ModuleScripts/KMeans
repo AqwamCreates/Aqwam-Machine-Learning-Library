@@ -2,310 +2,398 @@ local module = {}
 
 local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
 
-local defaultEpsilon = 1 * math.exp(-5)
-
 local defaultMaxNumberOfIterations = 500
 
-local function calculateFactorial(x)
+local defaultTargetCost = 0
+
+local defaultNumberOfClusters = 2
+
+local defaultDistanceFunction = "euclidean"
+
+local defaultStopWhenModelParametersDoesNotChange = false
+
+local defaultSetInitialClustersOnDataPoints = true
+
+local defaultSetTheCentroidsDistanceFarthest = false
+
+local defaultLearningRate = 0.3
+
+local distanceFunctionList = {
+
+	["manhattan"] = function (y, h) return math.abs(y - h) end,
+
+	["euclidean"] = function (y, h) return (y - h)^2 end,
+
+}
+
+local function calculateManhattanDistance(vector1, vector2)
+
+	local distance = 0
+
+	for row = 1, #vector1, 1 do
+
+		distance += distanceFunctionList["manhattan"](vector1[row][1], vector2[row][1])
+
+	end
+
+	return distance
+
+end
+
+local function calculateEuclideanDistance(vector1, vector2)
 	
-	if (x > 0) then
+	local squaredDistance = 0
+	
+	for row = 1, #vector1, 1 do
+
+		squaredDistance += distanceFunctionList["euclidean"](vector1[row][1], vector2[row][1])
+
+	end
+	
+	local distance = math.sqrt(squaredDistance)
+	
+	return distance
+	
+end
+
+local function calculateDistance(vector1, vector2, distanceFunction)
+	
+	local distance
+	
+	vector1 = AqwamMatrixLibrary:transpose(vector1)
+	vector2 = AqwamMatrixLibrary:transpose(vector2)
+
+	if (distanceFunction == "euclidean") then
 		
-		return x * calculateFactorial(x-1)
+		distance = calculateEuclideanDistance(vector1, vector2)
+		
+	elseif (distanceFunction == "manhattan") then
+		
+		distance = calculateManhattanDistance(vector1, vector2)
+		
+	end
+	
+	return distance 
+	
+end
+
+local function assignToCluster(distanceFromClusterRowVector) -- Number of columns -> number of clusters
+	
+	local distanceFromCluster
+	
+	local shortestDistance = math.huge
+	
+	local clusterNumber
+	
+	for cluster = 1, #distanceFromClusterRowVector[1], 1 do
+		
+		distanceFromCluster = distanceFromClusterRowVector[1][cluster]
+		
+		if (distanceFromCluster < shortestDistance) then
+			
+			shortestDistance = distanceFromCluster
+			
+			clusterNumber = cluster
+			
+		end
+		
+	end
+	
+	return clusterNumber, shortestDistance
+	
+end
+
+local function checkIfTheDataPointClusterNumberBelongsToTheCluster(dataPointClusterNumber, cluster)
+	
+	if (dataPointClusterNumber == cluster) then
+		
+		return 1
 		
 	else
 		
-		return x
+		return 0
 		
 	end
 	
 end
 
-local function calculatePoisson(featureVector, meanVector, numberOfData)
-	
-	local negativeMeanVector = AqwamMatrixLibrary:multiply(-1, meanVector)
-	
-	local expNegativeMeanVector = AqwamMatrixLibrary:applyFunction(math.exp, negativeMeanVector)
-	
-	local factorialNumberOfData = calculateFactorial(numberOfData)
-	
-	local inverseFactorialNumberOfData = 1/factorialNumberOfData
-	
-	return AqwamMatrixLibrary:multiply(featureVector, meanVector, expNegativeMeanVector, inverseFactorialNumberOfData)
-	
-end
+local function createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
 
-local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabilities)
-	
-	local posteriorMatrix = AqwamMatrixLibrary:createMatrix(#meanMatrix, #meanMatrix[1], 0)
-	
 	local numberOfData = #featureMatrix
+
+	local numberOfClusters = #modelParameters
+
+	local distanceMatrix = AqwamMatrixLibrary:createMatrix(numberOfData, numberOfClusters)
+
+	for datasetIndex = 1, #featureMatrix, 1 do
+
+		for cluster = 1, #modelParameters, 1 do
+
+			distanceMatrix[datasetIndex][cluster] = calculateDistance({featureMatrix[datasetIndex]}, {modelParameters[cluster]} , distanceFunction)
+
+		end
+
+	end
+
+	return distanceMatrix
+
+end
+
+local function chooseFarthestCentroidFromDatasetDistanceMatrix(distanceMatrix, blacklistedDataIndexArray)
 	
-	local featureVector
+	local distance
+
+	local maxDistance = 0
 	
-	local meanVector
+	local dataIndex
 	
-	local eachClass
-	
-	local eachClassSum
-	
-	local probability
-	
-	local poisson
-	
-	local eachClassDividedByEachClassSum
-	
-	local inverseEachClassSum
-	
-	for i = 1, #featureMatrix, 1 do
+	for row = 1, #distanceMatrix, 1 do
 		
-		featureVector = {featureMatrix[i]}
+		if table.find(blacklistedDataIndexArray, row) then continue end
+
+		for column = 1, #distanceMatrix[1], 1 do
+			
+			if table.find(blacklistedDataIndexArray, column) then continue end
+
+			distance = distanceMatrix[row][column]
+			
+			if (distance > maxDistance) then
+				
+				distance = maxDistance
+				dataIndex = row
+				
+			end
+
+		end
+
+	end
+	
+	return dataIndex
+	
+end
+
+local function chooseFarthestCentroids(featureMatrix, numberOfClusters, distanceFunction)
+	
+	local modelParameters = {}
+	
+	local dataIndexArray = {}
+	
+	local dataIndex
+	
+	local distanceMatrix = createDistanceMatrix(featureMatrix, featureMatrix, distanceFunction)
+	
+	repeat
 		
-		for j = 1, #meanMatrix, 1 do
-			
-			meanVector = {meanMatrix[j]}
-			
-			probability = {probabilities[j]}
-			
-			poisson = calculatePoisson(featureVector, meanMatrix, numberOfData)
-			
-			eachClass = AqwamMatrixLibrary:multiply(poisson, probability)
-			
+		dataIndex = chooseFarthestCentroidFromDatasetDistanceMatrix(distanceMatrix, dataIndexArray)
+		
+		table.insert(dataIndexArray, dataIndex)
+		
+	until (#dataIndexArray == numberOfClusters)
+	
+	for row = 1, numberOfClusters, 1 do
+		
+		dataIndex = dataIndexArray[row]
+		
+		table.insert(modelParameters, featureMatrix[dataIndex])
+		
+	end
+	
+	return modelParameters
+	
+end
+
+local function chooseRandomCentroids(featureMatrix, numberOfClusters)
+
+	local modelParameters = {}
+
+	local numberOfRows = #featureMatrix
+
+	local randomRow
+
+	local selectedRows = {}
+
+	local hasANewRandomRowChosen
+
+	for cluster = 1, numberOfClusters, 1 do
+
+		repeat
+
+			randomRow = Random.new():NextInteger(1, numberOfRows)
+
+			hasANewRandomRowChosen = not (table.find(selectedRows, randomRow))
+
+			if hasANewRandomRowChosen then
+
+				table.insert(selectedRows, randomRow)
+				modelParameters[cluster] = featureMatrix[randomRow]
+
+			end
+
+		until hasANewRandomRowChosen
+
+	end
+
+	return modelParameters
+
+end
+
+local function createClusterAssignmentMatrix(distanceMatrix) -- contains values of 0 and 1, where 0 is "does not belong to this cluster"
+	
+	local numberOfData = #distanceMatrix -- Number of rows
+	
+	local numberOfClusters = #distanceMatrix[1]
+	
+	local clusterAssignmentMatrix = AqwamMatrixLibrary:createMatrix(#distanceMatrix, #distanceMatrix[1])
+	
+	local dataPointClusterNumber
+	
+	for dataIndex = 1, numberOfData, 1 do
+		
+		dataPointClusterNumber = assignToCluster({distanceMatrix[dataIndex]})
+		
+		for cluster = 1, numberOfClusters, 1 do
+
+			clusterAssignmentMatrix[dataIndex][cluster] = checkIfTheDataPointClusterNumberBelongsToTheCluster(dataPointClusterNumber, cluster)
+
 		end
 		
-		eachClassSum = AqwamMatrixLibrary:sum(eachClass)
-		
-		inverseEachClassSum =  1/eachClassSum
-		
-		eachClassDividedByEachClassSum = AqwamMatrixLibrary:multiply(eachClass, inverseEachClassSum) -- Sometimes generate nan values. When added to non-nan values, the matrix will contain nan
-		
-		if not AqwamMatrixLibrary:areMatricesEqual(eachClassDividedByEachClassSum, eachClassDividedByEachClassSum) then continue end -- A quick fix to nan issue
-		
-		posteriorMatrix = AqwamMatrixLibrary:add(posteriorMatrix, eachClassDividedByEachClassSum)
-		
 	end
 	
-	return posteriorMatrix
+	return clusterAssignmentMatrix
 	
 end
 
-local function calculateOptimalProbability(posteriorMatrix)
+local function calculateCost(modelParameters, featureMatrix, distanceFunction)
 	
-	local numberOfProbabilities = #posteriorMatrix
+	local distanceMatrix = createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
 	
-	local posteriorMatrixSum = AqwamMatrixLibrary:verticalSum(posteriorMatrix)
+	local clusterAssignmentMatrix = createClusterAssignmentMatrix(distanceMatrix)
 	
-	local probabilitiesMatrix = {}
+	local costMatrixSquareRoot = AqwamMatrixLibrary:multiply(distanceMatrix, clusterAssignmentMatrix)
 	
-	local probability
+	local costMatrix = AqwamMatrixLibrary:multiply(costMatrixSquareRoot, costMatrixSquareRoot)
 	
-	local posteriorVector
+	local cost = AqwamMatrixLibrary:sum(costMatrix)
 	
-	for i = 1, numberOfProbabilities, 1 do
-		
-		posteriorVector = {posteriorMatrix[i]}
-		
-		probability = AqwamMatrixLibrary:divide(posteriorVector, posteriorMatrixSum)
-		
-		probabilitiesMatrix[i] = probability[1]
-		
-	end
-	
-	return probabilitiesMatrix
+	return cost
 	
 end
 
-local function calculateOptimalMean(featureMatrix, posteriorMatrix)
+local function calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction, learningRate)
 	
-	local featureVector
-	
-	local posteriorVector
-	
-	local transposedPosteriorVector
-	
-	local Numerator
-	
-	local NumeratorSum
-	
-	local newMeanVector
-	
-	local posteriorVectorSum
-	
-	local newMeanMatrix = {}
-	
-	local featureVector 
+	local distanceMatrix = createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
 
-	for i = 1, #posteriorMatrix, 1 do
-
-		posteriorVector = {posteriorMatrix[i]}
+	local clusterAssignmentMatrix = createClusterAssignmentMatrix(distanceMatrix) 
+	
+	local sumOfAssignedCentroidVector = AqwamMatrixLibrary:verticalSum(clusterAssignmentMatrix) -- since row is the number of data in clusterAssignmentMatrix, then we vertical sum it
+	
+	local newModelParameters = AqwamMatrixLibrary:createMatrix(#modelParameters, #modelParameters[1])
+	
+	for cluster = 1, #modelParameters, 1 do
 		
-		Numerator = {}
+		sumOfAssignedCentroidVector[1][cluster] = math.max(1, sumOfAssignedCentroidVector[1][cluster])
 		
-		for j = 1, #featureMatrix, 1 do
-			
-			featureVector = {featureMatrix[j]}
-			
-			Numerator[j] = AqwamMatrixLibrary:multiply(featureVector, posteriorVector)[1] -- [1] is added so that we remove 1 dimension to merge with the Numerator
-			
-		end
-		
-		NumeratorSum = AqwamMatrixLibrary:verticalSum(Numerator)
-		
-		newMeanVector = AqwamMatrixLibrary:divide(NumeratorSum, posteriorVector)
-		
-		newMeanMatrix[i] = newMeanVector[1] -- [1] is added so that we remove 1 dimension to merge with the newMeanMatrix
- 		
-	end
-	
-	return newMeanMatrix
-	
-end
-
-local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, probabilitiesMatrix)
-	
-	local numberOfData = #featureMatrix
-	
-	local logLikesVector = {}
-	
-	local logLike
-	
-	local likelihood
-	
-	local likelihoodVector = {}
-	
-	local likelihoodVectorSum
-	
-	local featureVector
-	
-	local meanVector
-	
-	local probability
-	
-	local poisson
-	
-	local incomplete
-	
-	local probabilityTransposed
-	
-	for i = 1, #featureMatrix, 1 do
-		
-		featureVector = {featureMatrix[i]}
-		
-		for j = 1, #meanMatrix, 1 do
-			
-			probability = {probabilitiesMatrix[j]}
-			
-			meanVector = {meanMatrix[j]}
-			
-			poisson = calculatePoisson(featureVector, meanVector, numberOfData)
-			
-			probabilityTransposed = AqwamMatrixLibrary:transpose(probability)
-			
-			likelihood = AqwamMatrixLibrary:dotProduct(poisson, probabilityTransposed)
-			
-			table.insert(likelihoodVector, {likelihood})
-			
-		end
-		
-		logLike = AqwamMatrixLibrary:applyFunction(math.log10, likelihoodVector)
-			
-		table.insert(logLikesVector, logLike[1])
+		newModelParameters[cluster] = AqwamMatrixLibrary:divide({modelParameters[cluster]}, sumOfAssignedCentroidVector[1][cluster])[1]
 		
 	end
 	
-	incomplete = AqwamMatrixLibrary:sum(logLikesVector)
+	local modelParametersWithLearningRate = AqwamMatrixLibrary:multiply(learningRate, AqwamMatrixLibrary:subtract(newModelParameters, modelParameters))
 	
-	return incomplete
+	modelParameters = AqwamMatrixLibrary:subtract(modelParameters, modelParametersWithLearningRate)
+	
+	return modelParameters
 	
 end
 
-
-function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, epsilon, suppressOutput)
-	
-	local incompletes = {}
-	
-	local cost = math.huge
-	
-	epsilon = epsilon or (defaultEpsilon * #featureMatrix)
+function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, learningRate, distanceFunction, targetCost, setInitialClustersOnDataPoints, setTheCentroidsDistanceFarthest, stopWhenModelParametersDoesNotChange, suppressOutput)
 	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
 	
-	local posteriorMatrix
+	targetCost = targetCost or defaultTargetCost
 	
-	local probabilitiesMatrix = AqwamMatrixLibrary:createRandomNormalMatrix(numberOfClusters, #featureMatrix[1])
+	distanceFunction = distanceFunction or defaultDistanceFunction
 	
-	local meanMatrix = AqwamMatrixLibrary:createRandomNormalMatrix(numberOfClusters, #featureMatrix[1])
+	numberOfClusters = numberOfClusters or defaultNumberOfClusters
 	
-	local incompleteLogLikelihood
+	learningRate = learningRate or defaultLearningRate
 	
-	local current
+	if (type(stopWhenModelParametersDoesNotChange) ~= "boolean") then
+		
+		stopWhenModelParametersDoesNotChange = defaultStopWhenModelParametersDoesNotChange
+		
+	end
 	
-	local previous
+	if (type(setInitialClustersOnDataPoints) ~= "boolean") then
+
+		setInitialClustersOnDataPoints = defaultSetInitialClustersOnDataPoints
+
+	end
+	
+	if (type(setTheCentroidsDistanceFarthest) ~= "boolean") then
+
+		setTheCentroidsDistanceFarthest = defaultSetTheCentroidsDistanceFarthest
+
+	end
+	
+	local modelParameters
+	
+	local previousModelParameters
+	
+	local areModelParametersEqual
+	
+	local cost
+	
+	if setInitialClustersOnDataPoints and setTheCentroidsDistanceFarthest then
+		
+		modelParameters = chooseFarthestCentroids(featureMatrix, numberOfClusters, distanceFunction)
+		
+	elseif setInitialClustersOnDataPoints and not setTheCentroidsDistanceFarthest then
+		
+		modelParameters = chooseRandomCentroids(featureMatrix, numberOfClusters)
+		
+	else
+		
+		modelParameters = AqwamMatrixLibrary:createRandomMatrix(numberOfClusters, #featureMatrix[1])
+		
+	end
 	
 	local numberOfIterations = 0
 	
 	repeat
-		
+
 		numberOfIterations += 1
 		
-		posteriorMatrix = calculatePosteriorProbability(featureMatrix, meanMatrix, probabilitiesMatrix)
+		previousModelParameters = modelParameters
+
+		modelParameters = calculateModelParametersMean(modelParameters, featureMatrix, distanceFunction, learningRate)
+
+		areModelParametersEqual =  AqwamMatrixLibrary:areMatricesEqual(modelParameters, previousModelParameters)
 		
-		probabilitiesMatrix = calculateOptimalProbability(posteriorMatrix)
-		
-		meanMatrix = calculateOptimalMean(featureMatrix, posteriorMatrix)
-		
-		incompleteLogLikelihood = calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, probabilitiesMatrix)
-		
-		table.insert(incompletes, incompleteLogLikelihood)
-		
-		if (#incompletes > 1) then
-			
-			current = incompletes[#incompletes]
-			
-			previous = incompletes[#incompletes - 1]
-			
-			cost = current - previous
-			
-		end
-		
+		cost = calculateCost(modelParameters, featureMatrix, distanceFunction)
+
 		if (not suppressOutput) then print("Iteration: " .. numberOfIterations .. "\t\tCost: " .. cost) end
-		
-	until (numberOfIterations == maxNumberOfIterations) or (cost <= epsilon)
+
+	until (numberOfIterations == maxNumberOfIterations) or (math.abs(cost) <= targetCost) or (areModelParametersEqual and stopWhenModelParametersDoesNotChange)
 	
-	return meanMatrix, probabilitiesMatrix
+	if (cost == math.huge) then
+
+		warn("The model diverged! Please repeat the experiment again or change the argument values.")
+
+	end
+	
+	return modelParameters, cost
 	
 end
 
-function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
+function module:predict(featureMatrix, modelParameters, distanceFunction)
 	
-	local selectedCluster
+	local distanceFunction = distanceFunction or defaultDistanceFunction
 	
-	local probability
+	local distanceFromClusterRowVector = createDistanceMatrix(modelParameters, featureMatrix, distanceFunction)
+
+	local clusterNumber, shortestDistance = assignToCluster(distanceFromClusterRowVector)
 	
-	local highestProbability = -math.huge
-	
-	local probabilityVector
-	
-	local posteriorMatrix = calculatePosteriorProbability(featureVector, meanMatrix, probabilitiesMatrix)
-	
-	local posteriorMatrixSum = AqwamMatrixLibrary:horizontalSum(posteriorMatrix)
-	
-	for cluster = 1, #posteriorMatrix, 1 do
-		
-		probability = posteriorMatrixSum[cluster][1]
-		
-		if (probability > highestProbability) then
-			
-			selectedCluster = cluster
-			
-			probabilityVector = {posteriorMatrix[cluster][1]}
-			
-			highestProbability = probability
-			
-		end
-		 
-	end
-	
-	return selectedCluster, probabilityVector
+	return clusterNumber, shortestDistance
 	
 end
 
