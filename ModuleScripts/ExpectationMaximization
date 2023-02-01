@@ -275,8 +275,6 @@ end
 
 function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
 	
-	local posteriorVector
-	
 	local selectedCluster
 	
 	local probability
@@ -291,7 +289,7 @@ function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
 	
 	for cluster = 1, #posteriorMatrix, 1 do
 		
-		probability = posteriorMatrix[cluster][1]
+		probability = posteriorMatrixSum[cluster][1]
 		
 		if (probability > highestProbability) then
 			
