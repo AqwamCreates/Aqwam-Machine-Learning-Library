@@ -6,33 +6,29 @@ local defaultEpsilon = 1 * math.exp(-5)
 
 local defaultMaxNumberOfIterations = 500
 
-local function calculateFactorial(x)
+local function calculateFactorial(x) -- this factorial function can only work with positive integers! This means that the data must be in integers only!
 	
-	if (x > 0) then
-		
-		return x * calculateFactorial(x-1)
-		
-	else
-		
-		return x
-		
-	end
+	if (x == 0) then return 1 end
 	
+	if (x == 1) then return 1 end
+	
+	if (x > 1) then return x * calculateFactorial(x-1) end
+
 end
 
-local function calculatePoisson(meanVector, numberOfData)
+local function calculatePoisson(meanVector, featureVector)
 	
 	local negativeMeanVector = AqwamMatrixLibrary:multiply(-1, meanVector)
 	
 	local expNegativeMeanVector = AqwamMatrixLibrary:applyFunction(math.exp, negativeMeanVector)
 	
-	local factorialNumberOfData = calculateFactorial(numberOfData)
+	local factorialFeatureVector = AqwamMatrixLibrary:applyFunction(calculateFactorial, featureVector)
 	
-	local inverseFactorialNumberOfData = 1/factorialNumberOfData
+	local inverseFactorialFeatureVector = AqwamMatrixLibrary:divide(1, factorialFeatureVector)
 	
-	local meanVectorPoweredByNumberOfData = AqwamMatrixLibrary:power(meanVector,numberOfData)
+	local meanVectorPoweredByNumberOfData = AqwamMatrixLibrary:power(meanVector, featureVector)
 	
-	local calculatedPoisson = AqwamMatrixLibrary:multiply(meanVectorPoweredByNumberOfData, expNegativeMeanVector, inverseFactorialNumberOfData)
+	local calculatedPoisson = AqwamMatrixLibrary:multiply(meanVectorPoweredByNumberOfData, expNegativeMeanVector, inverseFactorialFeatureVector)
 	
 	return calculatedPoisson
 	
@@ -70,7 +66,7 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 			
 			probability = {probabilities[j]}
 			
-			poisson = calculatePoisson(meanMatrix, numberOfData)
+			poisson = calculatePoisson(meanMatrix, featureVector)
 			
 			eachClass = AqwamMatrixLibrary:multiply(poisson, probability)
 			
@@ -82,7 +78,7 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		
 		eachClassDividedByEachClassSum = AqwamMatrixLibrary:multiply(eachClass, inverseEachClassSum) -- Sometimes generate nan values. When added to non-nan values, the matrix will contain nan
 		
-		if not AqwamMatrixLibrary:areMatricesEqual(eachClassDividedByEachClassSum, eachClassDividedByEachClassSum) then continue end -- A quick fix to nan issue
+		--if not AqwamMatrixLibrary:areMatricesEqual(eachClassDividedByEachClassSum, eachClassDividedByEachClassSum) then continue end -- A quick fix to nan issue
 		
 		posteriorMatrix = AqwamMatrixLibrary:add(posteriorMatrix, eachClassDividedByEachClassSum)
 		
@@ -200,7 +196,7 @@ local function calculateIncompleteLogLikelihood(featureMatrix, meanMatrix, proba
 			
 			meanVector = {meanMatrix[j]}
 			
-			poisson = calculatePoisson(meanVector, numberOfData)
+			poisson = calculatePoisson(meanVector, featureVector)
 			
 			probabilityTransposed = AqwamMatrixLibrary:transpose(probability)
 			
@@ -275,7 +271,7 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 		
 	until (numberOfIterations == maxNumberOfIterations) or (cost <= epsilon)
 	
-	return meanMatrix, probabilitiesMatrix
+	return meanMatrix, probabilitiesMatrix, cost
 	
 end
 
