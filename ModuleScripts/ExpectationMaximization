@@ -60,7 +60,7 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		
 		featureVector = {featureMatrix[i]}
 		
-		eachClass = AqwamMatrixLibrary:createMatrix(1, #meanMatrix[1])
+		eachClass = AqwamMatrixLibrary:createMatrix(#meanMatrix, #meanMatrix[1])
 		
 		for j = 1, #meanMatrix, 1 do
 			
@@ -70,13 +70,13 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 			
 			poisson = calculatePoisson(meanMatrix, featureVector)
 			
-			eachClass = AqwamMatrixLibrary:add(eachClass, AqwamMatrixLibrary:multiply(poisson, probability))
+			eachClass[j] = AqwamMatrixLibrary:multiply(poisson, probability)[1]
 			
 		end
 		
-		eachClassSum = AqwamMatrixLibrary:sum(eachClass)
+		eachClassSum = AqwamMatrixLibrary:verticalSum(eachClass)
 		
-		inverseEachClassSum =  1/eachClassSum
+		inverseEachClassSum =  AqwamMatrixLibrary:divide(1, eachClassSum)
 		
 		eachClassDividedByEachClassSum = AqwamMatrixLibrary:multiply(eachClass, inverseEachClassSum) -- Sometimes generate nan values. When added to non-nan values, the matrix will contain nan
 		
