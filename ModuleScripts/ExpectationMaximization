@@ -60,6 +60,8 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		
 		featureVector = {featureMatrix[i]}
 		
+		eachClass = AqwamMatrixLibrary:createMatrix(1, #meanMatrix[1])
+		
 		for j = 1, #meanMatrix, 1 do
 			
 			meanVector = {meanMatrix[j]}
@@ -68,7 +70,7 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 			
 			poisson = calculatePoisson(meanMatrix, featureVector)
 			
-			eachClass = AqwamMatrixLibrary:multiply(poisson, probability)
+			eachClass = AqwamMatrixLibrary:add(eachClass, AqwamMatrixLibrary:multiply(poisson, probability))
 			
 		end
 		
@@ -83,7 +85,7 @@ local function calculatePosteriorProbability(featureMatrix, meanMatrix, probabil
 		posteriorMatrix = AqwamMatrixLibrary:add(posteriorMatrix, eachClassDividedByEachClassSum)
 		
 	end
-	
+
 	return posteriorMatrix
 	
 end
