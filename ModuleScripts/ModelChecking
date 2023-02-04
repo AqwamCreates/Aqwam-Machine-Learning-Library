@@ -1,5 +1,5 @@
 local AqwamMachineLearningModels = script.Parent:GetChildren()
-local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker)
+local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
 
 local module = {}
 
