@@ -299,7 +299,7 @@ function module:predict(featureVector, meanMatrix, probabilitiesMatrix)
 			
 			selectedCluster = cluster
 			
-			probabilityVector = {posteriorMatrix[cluster][1]}
+			probabilityVector = {posteriorMatrix[cluster]}
 			
 			highestProbability = probability
 			
