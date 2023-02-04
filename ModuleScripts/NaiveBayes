@@ -158,7 +158,7 @@ function module:predict(featureMatrix, meanMatrix, standardDeviationMatrix, clas
 		
 		probabilityVector = {probabilitiesMatrix[classIndex]}
 		
-		probability = AqwamMatrixLibrary:dotProduct(featureMatrix, AqwamMatrixLibrary:transpose(probabilityVector)) 
+		probability = AqwamMatrixLibrary:sum(probabilityVector) 
 		
 		if (probability > highestProbability) then
 			
@@ -175,6 +175,5 @@ function module:predict(featureMatrix, meanMatrix, standardDeviationMatrix, clas
 	return predictedClass, highestProbabilityVector
 	
 end
-
 
 return module
