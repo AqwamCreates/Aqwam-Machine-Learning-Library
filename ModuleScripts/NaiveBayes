@@ -112,7 +112,13 @@ function module:train(featureMatrix, labelVector)
 	
 	local standardDeviationMatrix = AqwamMatrixLibrary:createMatrix(#classesList, #featureMatrix[1])
 	
+	local gaussianDensityMatrix = AqwamMatrixLibrary:createMatrix(#classesList, #featureMatrix[1], 0)
+	
+	local gaussianDensityVector
+	
 	local featureMatrix
+	
+	local featureVector
 	
 	local meanVector
 	
@@ -132,9 +138,21 @@ function module:train(featureMatrix, labelVector)
 		
 		standardDeviationMatrix[classIndex] = standardDeviationVector[1]
 		
+		probabilitiesVector = AqwamMatrixLibrary:createMatrix(1, #featureMatrix[1], 1)
+		
+		for data = 1, #featureMatrix, 1 do
+			
+			featureVector = {featureMatrix[data]}
+			
+			gaussianDensityVector = calculateGaussianDensity(featureVector, meanVector, standardDeviationVector)
+			
+			probabilitiesVector = AqwamMatrixLibrary:multiply(probabilitiesVector, gaussianDensityVector)
+			
+		end
+		
+		probabilitiesMatrix[classIndex] = probabilitiesVector[1]
+		
 	end
-	
-	probabilitiesMatrix = calculateGaussianDensity(featureMatrix, meanMatrix, standardDeviationMatrix)
 	
 	return probabilitiesMatrix, meanMatrix, standardDeviationMatrix, classesList
 	
