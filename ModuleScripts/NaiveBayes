@@ -116,7 +116,7 @@ function module:train(featureMatrix, labelVector)
 	
 	local gaussianDensityVector
 	
-	local featureMatrix
+	local extractedFeatureMatrix
 	
 	local featureVector
 	
@@ -128,11 +128,11 @@ function module:train(featureMatrix, labelVector)
 	
 	for classIndex, classValue in ipairs(classesList) do
 		
-		featureMatrix = extractedFeatureMatricesTable[classIndex]
+		extractedFeatureMatrix = extractedFeatureMatricesTable[classIndex]
 		
-		meanVector = AqwamMatrixLibrary:verticalMean(featureMatrix)
+		meanVector = AqwamMatrixLibrary:verticalMean(extractedFeatureMatrix)
 		
-		standardDeviationVector = AqwamMatrixLibrary:verticalStandardDeviation(featureMatrix)
+		standardDeviationVector = AqwamMatrixLibrary:verticalStandardDeviation(extractedFeatureMatrix)
 		
 		meanMatrix[classIndex] = meanVector[1]
 		
