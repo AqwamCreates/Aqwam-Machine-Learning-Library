@@ -88,6 +88,8 @@ function module:testRegressionModel(featureMatrix, labelVector, modelParameters,
 	local errorVector
 	
 	local totalError
+	
+	local averageError
 
 	local numberOfData = #featureMatrix
 	
@@ -104,6 +106,8 @@ function module:testRegressionModel(featureMatrix, labelVector, modelParameters,
 	errorVector = AqwamMatrixLibrary:subtract(modelOutputVector, labelVector)
 	
 	totalError = AqwamMatrixLibrary:verticalSum(errorVector)
+	
+	averageError = totalError/numberOfData
 	
 	return totalError, errorVector, modelOutputVector
 	
