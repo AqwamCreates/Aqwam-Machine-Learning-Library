@@ -9,7 +9,7 @@ local function checkIfModelIsAClassificationModel(machineLearningModelName)
 	
 	if not table.find(classificationModels, machineLearningModelName) then
 		
-		error("Not A classification Model!")
+		error("Not A Classification Model!")
 		
 	end
 	
@@ -21,7 +21,7 @@ local function checkIfModelIsARegressionModel(machineLearningModelName)
 
 	if not table.find(classificationModels, machineLearningModelName) then
 
-		error("Not A classification Model!")
+		error("Not A Regression Model!")
 
 	end
 
