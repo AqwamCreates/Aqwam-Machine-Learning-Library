@@ -2,7 +2,7 @@
 
 	--------------------------------------------------------------------
 
-	Version 1.3
+	Version 1.4
 
 	Aqwam's Roblox Machine Learning Library (AR-MachineLL)
 
@@ -29,7 +29,7 @@
 
 --]]
 
-local requiredMatrixLibraryVersion = 1.3
+local requiredMatrixLibraryVersion = 1.5
 
 local AqwamMatrixLibrary = require(script.AqwamRobloxMatrixLibraryLinker.Value)
 
@@ -38,6 +38,9 @@ local LogisticRegression = require(script.LogisticRegression)
 local KMeans = require(script.KMeans)
 local SupportVectorMachine = require(script.SupportVectorMachine)
 local ExpectationMaximization = require(script.ExpectationMaximization)
+local NaiveBayes = require(script.NaiveBayes)
+
+local ModelChecking = require(script.ModelChecking) -- for testing and validating datasets
 
 local LinearRegressionDictionary = {
 	
@@ -74,6 +77,20 @@ local ExpectationMaximizationnDictionary = {
 	
 }
 
+local NaiveBayesDictionary = {
+	
+	train = NaiveBayes.train,
+	predict = NaiveBayes.predict
+	
+}
+
+local ModelCheckingDictionary = {
+	
+	testRegressionModel = ModelChecking.testRegressionModel,
+	testLogisticModel = ModelChecking.testClassificationModel
+	
+}
+
 local AqwamRobloxMachineLearningLibrary = {}
 
 AqwamRobloxMachineLearningLibrary.LinearRegression = LinearRegressionDictionary
@@ -85,6 +102,10 @@ AqwamRobloxMachineLearningLibrary.KMeans = KMeansDictionary
 AqwamRobloxMachineLearningLibrary.SupportVectorMachine = SupportVectorMachineDictionary
 
 AqwamRobloxMachineLearningLibrary.ExpectationMaximization = ExpectationMaximizationnDictionary
+
+AqwamRobloxMachineLearningLibrary.NaiveBayes = NaiveBayesDictionary
+
+AqwamRobloxMachineLearningLibrary.ModelChecking = ModelCheckingDictionary
 
 local function checkVersion()
 	
