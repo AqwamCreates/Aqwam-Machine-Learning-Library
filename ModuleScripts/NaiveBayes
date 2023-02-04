@@ -1,1 +1,180 @@
+local AqwamMatrixLibrary = require(script.Parent.AqwamRobloxMatrixLibraryLinker.Value)
 
+local module = {}
+
+local function getClassesList(labelVector)
+	
+	local classesList = {}
+	
+	local value
+	
+	for i = 1, #labelVector, 1 do
+		
+		value = labelVector[i][1]
+		
+		if not table.find(classesList, value) then
+			
+			table.insert(classesList, value)
+			
+		end
+		
+	end
+	
+	return classesList
+	
+end
+
+local function extractFeatureMatrixFromPosition(featureMatrix, positionList)
+	
+	local extractedFeatureMatrix = {}
+	
+	for i = 1, #featureMatrix, 1 do
+		
+		if table.find(positionList, i) then
+			
+			table.insert(extractedFeatureMatrix, featureMatrix[i])
+			
+		end	
+		
+	end
+	
+	return extractedFeatureMatrix
+	
+end
+
+local function separateFeatureMatrixByClass(featureMatrix, labelVector)
+	
+	local classesList = getClassesList(labelVector)
+	
+	local classesPositionTable = {}
+	
+	for classIndex, class in ipairs(classesList) do
+		
+		classesPositionTable[classIndex] = {}
+		
+		for i = 1, #labelVector, 1 do
+			
+			if (labelVector[i][1] == class) then
+				
+				table.insert(classesPositionTable[classIndex], i)
+				
+			end
+			
+		end
+		
+	end
+	
+	local extractedFeatureMatricesTable = {}
+	
+	local extractedFeatureMatrix
+	
+	for classIndex, class in ipairs(classesList) do
+		
+		extractedFeatureMatrix = extractFeatureMatrixFromPosition(featureMatrix, classesPositionTable[classIndex])
+		
+		table.insert(extractedFeatureMatricesTable, extractedFeatureMatrix)
+		
+	end
+	
+	return extractedFeatureMatricesTable, classesList
+	
+end
+
+local function calculateGaussianDensity(featureMatrix, meanMatrix, standardDeviationMatrix)
+	
+	local exponentStep1 = AqwamMatrixLibrary:subtract(featureMatrix, meanMatrix)
+	
+	local exponentStep2 = AqwamMatrixLibrary:divide(exponentStep1, standardDeviationMatrix)
+	
+	local exponentStep3 = AqwamMatrixLibrary:multiply(exponentStep2, exponentStep2)
+	
+	local exponentStep4 = AqwamMatrixLibrary:multiply((-1/2), exponentStep3)
+	
+	local exponentWithTerms = AqwamMatrixLibrary:applyFunction(math.exp, exponentStep4)
+	
+	local fractionStep1 = AqwamMatrixLibrary:multiply(standardDeviationMatrix, math.sqrt(2 * math.pi))
+	
+	local fractionStep2 = AqwamMatrixLibrary:divide(1, fractionStep1)
+	
+	local gaussianDensity = AqwamMatrixLibrary:multiply(fractionStep2, exponentWithTerms)
+	
+	return gaussianDensity	
+	
+end
+
+function module:train(featureMatrix, labelVector)
+	
+	local extractedFeatureMatricesTable, classesList = separateFeatureMatrixByClass(featureMatrix, labelVector)
+	
+	local probabilitiesMatrix = AqwamMatrixLibrary:createMatrix(#classesList, #featureMatrix[1])
+	
+	local meanMatrix = AqwamMatrixLibrary:createMatrix(#classesList, #featureMatrix[1])
+	
+	local standardDeviationMatrix = AqwamMatrixLibrary:createMatrix(#classesList, #featureMatrix[1])
+	
+	local featureMatrix
+	
+	local meanVector
+	
+	local standardDeviationVector
+	
+	local probabilitiesVector
+	
+	for classIndex, classValue in ipairs(classesList) do
+		
+		featureMatrix = extractedFeatureMatricesTable[classIndex]
+		
+		meanVector = AqwamMatrixLibrary:verticalMean(featureMatrix)
+		
+		standardDeviationVector = AqwamMatrixLibrary:verticalStandardDeviation(featureMatrix)
+		
+		meanMatrix[classIndex] = meanVector[1]
+		
+		standardDeviationMatrix[classIndex] = standardDeviationVector[1]
+		
+	end
+	
+	probabilitiesMatrix = calculateGaussianDensity(featureMatrix, meanMatrix, standardDeviationMatrix)
+	
+	return meanMatrix, standardDeviationMatrix, probabilitiesMatrix, classesList
+	
+end
+
+function module:predict(featureMatrix, meanMatrix, standardDeviationMatrix, classesList)
+	
+	local probabilitiesMatrix = calculateGaussianDensity(featureMatrix, meanMatrix, standardDeviationMatrix)
+	
+	local highestProbability = -math.huge
+	
+	local predictedClass
+	
+	local highestProbabilityVector
+	
+	local probabilityVector
+	
+	local probability
+	
+	for classIndex, classValue in ipairs(classesList) do
+		
+		probabilityVector = {probabilitiesMatrix[classIndex]}
+		
+		probability = AqwamMatrixLibrary:dotProduct(featureMatrix, AqwamMatrixLibrary:transpose(probabilityVector)) 
+		
+		if (probability > highestProbability) then
+			
+			predictedClass = classValue
+
+			highestProbability = probability
+
+			highestProbabilityVector = probabilityVector
+
+		end
+		
+	end
+	
+	return predictedClass, highestProbabilityVector
+	
+end
+
+
+return module
