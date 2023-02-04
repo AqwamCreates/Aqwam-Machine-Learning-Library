@@ -109,7 +109,7 @@ function module:testRegressionModel(featureMatrix, labelVector, modelParameters,
 	
 	averageError = totalError/numberOfData
 	
-	return totalError, errorVector, modelOutputVector
+	return averageError, errorVector, modelOutputVector
 	
 end
 
