@@ -106,7 +106,7 @@ function module:train(featureMatrix, labelVector)
 	
 	local extractedFeatureMatricesTable, classesList = separateFeatureMatrixByClass(featureMatrix, labelVector)
 	
-	local probabilitiesMatrix = AqwamMatrixLibrary:createMatrix(#classesList, #featureMatrix[1])
+	local probabilitiesMatrix = AqwamMatrixLibrary:createMatrix(#classesList, #featureMatrix[1], 1)
 	
 	local meanMatrix = AqwamMatrixLibrary:createMatrix(#classesList, #featureMatrix[1])
 	
@@ -136,13 +136,15 @@ function module:train(featureMatrix, labelVector)
 	
 	probabilitiesMatrix = calculateGaussianDensity(featureMatrix, meanMatrix, standardDeviationMatrix)
 	
-	return meanMatrix, standardDeviationMatrix, probabilitiesMatrix, classesList
+	return probabilitiesMatrix, meanMatrix, standardDeviationMatrix, classesList
 	
 end
 
-function module:predict(featureMatrix, meanMatrix, standardDeviationMatrix, classesList)
+function module:predict(featureMatrix, probabilitiesMatrix, meanMatrix, standardDeviationMatrix, classesList)
 	
-	local probabilitiesMatrix = calculateGaussianDensity(featureMatrix, meanMatrix, standardDeviationMatrix)
+	local priorProbabilitiesMatrix = calculateGaussianDensity(featureMatrix, meanMatrix, standardDeviationMatrix)
+	
+	local multipliedProbalitiesMatrices = AqwamMatrixLibrary:multiply(probabilitiesMatrix, priorProbabilitiesMatrix)
 	
 	local highestProbability = -math.huge
 	
@@ -156,7 +158,7 @@ function module:predict(featureMatrix, meanMatrix, standardDeviationMatrix, clas
 	
 	for classIndex, classValue in ipairs(classesList) do
 		
-		probabilityVector = {probabilitiesMatrix[classIndex]}
+		probabilityVector = {multipliedProbalitiesMatrices[classIndex]}
 		
 		probability = AqwamMatrixLibrary:sum(probabilityVector) 
 		
