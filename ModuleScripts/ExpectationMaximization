@@ -6,6 +6,8 @@ local defaultEpsilon = 1 * math.exp(-5)
 
 local defaultMaxNumberOfIterations = 500
 
+local defaultNumberOfClusters = 2
+
 local function calculateFactorial(x) -- this factorial function can only work with positive integers! This means that the data must be in integers only!
 	
 	if (x == 0) then return 1 end
@@ -230,6 +232,8 @@ function module:train(featureMatrix, numberOfClusters, maxNumberOfIterations, ep
 	epsilon = epsilon or (defaultEpsilon * #featureMatrix)
 	
 	maxNumberOfIterations = maxNumberOfIterations or defaultMaxNumberOfIterations
+	
+	numberOfClusters = numberOfClusters or defaultNumberOfClusters
 	
 	local posteriorMatrix
 	
