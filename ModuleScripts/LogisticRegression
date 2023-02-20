@@ -44,8 +44,6 @@ local function calculateCost(modelParameters, featureMatrix, labelVector, sigmoi
 	
 	local hypothesisVector = calculateHypothesisVector(featureMatrix, modelParameters, sigmoidFunction)
 	
-	local calculatedError = AqwamMatrixLibrary:subtract(labelVector, hypothesisVector)
-	
 	local totalCost = 0
 	
 	local averageCost
