@@ -1,10 +1,10 @@
-# Aqwam-Roblox-Machine-Learning-Library
+# Aqwam-Machine-Learning-Library
 
 --------------------------------------------------------------------
 
 Version 1.5
 
-Aqwam's Roblox Machine Learning Library (AR-MachineLL)
+Aqwam's Machine Learning Library (AR-MachineLL)
 
 Author: Aqwam Harish Aiman
 	
